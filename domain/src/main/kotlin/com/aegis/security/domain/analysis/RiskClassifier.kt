@@ -55,6 +55,17 @@ object RiskClassifier {
         if (failed.isNotEmpty()) {
             return Classification(Verdict.INCONCLUSIVE, listOf(failureReason(failed), NO_GUARANTEE))
         }
+        val partial = outcomes.filter { it.status == EngineStatus.COMPLETED && it.incomplete.isNotEmpty() }
+        if (partial.isNotEmpty()) {
+            return Classification(
+                Verdict.INCONCLUSIVE,
+                listOf(
+                    "Inspeção incompleta: " + partial.joinToString("; ") { "${it.engineName} (${it.incomplete.take(3).joinToString()})" } + ".",
+                    "Partes não inspecionadas impedem classificar o arquivo como seguro.",
+                    NO_GUARANTEE,
+                ),
+            )
+        }
         if (!structuralCompleted) {
             return Classification(
                 Verdict.INCONCLUSIVE,

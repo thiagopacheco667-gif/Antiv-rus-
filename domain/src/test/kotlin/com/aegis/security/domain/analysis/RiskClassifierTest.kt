@@ -56,4 +56,10 @@ class RiskClassifierTest {
         val threat = Classification(Verdict.THREAT_DETECTED, listOf("EICAR"))
         assertEquals(Verdict.THREAT_DETECTED, RiskClassifier.combine(threat, found(1)).verdict)
     }
+
+    @Test
+    fun partialInspection_isInconclusive_neverSafe() {
+        val partial = listOf(EngineOutcome("zip", "ZIP", EngineStatus.COMPLETED, structural = true, incomplete = listOf("limite de entradas atingido")))
+        assertEquals(Verdict.INCONCLUSIVE, RiskClassifier.classifyLocal(partial, emptyList(), 10).verdict)
+    }
 }

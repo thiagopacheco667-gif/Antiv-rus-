@@ -52,6 +52,7 @@ data class PeFacts(
     val isDotNet: Boolean,
     val overlayBytes: Long,
     val inconsistencies: List<String>,
+    val importsTruncated: Boolean = false,
     val contentMatches: Set<String>,
     val urls: List<String>,
 ) : AnalysisFact
@@ -72,7 +73,11 @@ class PeEngine @Inject constructor() : AnalysisEngine {
         }
         val scan = ContentScanner.scan(input.file, SUSPICIOUS_STRINGS.keys, input.limits.maxContentScanBytes)
         val complete = facts.copy(contentMatches = scan.matches.keys, urls = scan.urls)
-        return EngineResult.Completed(details(complete, scan.truncated), listOf(complete))
+        val incomplete = buildList {
+            if (scan.truncated) add("varredura de strings limitada aos primeiros ${input.limits.maxContentScanMb} MB")
+            if (facts.importsTruncated) add("tabela de importações acima do limite de leitura")
+        }
+        return EngineResult.Completed(details(complete, scan.truncated), listOf(complete), incomplete)
     }
 
     internal fun parse(bin: BinaryFile): PeFacts {
@@ -134,7 +139,8 @@ class PeEngine @Inject constructor() : AnalysisEngine {
         if (entryRva != 0L && entrySection == null) inconsistencies += "ponto de entrada (${hex32(entryRva)}) fora de qualquer seção"
 
         val (importRva, _) = directory(1)
-        val imports = if (importRva != 0L) readImports(bin, sections, importRva, is64, inconsistencies) else emptyMap()
+        val limitsHit = mutableListOf<String>()
+        val imports = if (importRva != 0L) readImports(bin, sections, importRva, is64, inconsistencies, limitsHit) else emptyMap()
         val (securityOffset, securitySize) = directory(4)
         val (clrRva, _) = directory(14)
 
@@ -161,6 +167,7 @@ class PeEngine @Inject constructor() : AnalysisEngine {
             isDotNet = clrRva != 0L,
             overlayBytes = overlay,
             inconsistencies = inconsistencies.distinct(),
+            importsTruncated = limitsHit.isNotEmpty(),
             contentMatches = emptySet(),
             urls = emptyList(),
         )
@@ -179,6 +186,7 @@ class PeEngine @Inject constructor() : AnalysisEngine {
         importRva: Long,
         is64: Boolean,
         inconsistencies: MutableList<String>,
+        limitsHit: MutableList<String>,
     ): Map<String, List<String>> {
         val result = linkedMapOf<String, List<String>>()
         var descriptor = rvaToOffset(sections, importRva) ?: run {
@@ -216,8 +224,13 @@ class PeEngine @Inject constructor() : AnalysisEngine {
                 thunk += width
             }
             result[dllName] = functions
+            if (totalFunctions >= MAX_IMPORT_FUNCTIONS) {
+                limitsHit += "funções"
+                return result
+            }
             descriptor += 20
         }
+        limitsHit += "DLLs"
         return result
     }
 

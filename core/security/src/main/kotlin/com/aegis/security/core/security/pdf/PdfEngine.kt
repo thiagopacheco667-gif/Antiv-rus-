@@ -74,7 +74,12 @@ class PdfEngine @Inject constructor() : AnalysisEngine {
                 },
             ),
         )
-        return EngineResult.Completed(details, listOf(facts))
+        val incomplete = buildList {
+            if (facts.truncatedScan) add("conteúdo além de ${input.limits.maxContentScanMb} MB não inspecionado")
+            if (facts.objectStreamsSkipped > 0) add("${facts.objectStreamsSkipped} fluxo(s) de objetos não inspecionado(s)")
+            if (facts.count("Encrypt") > 0) add("documento criptografado")
+        }
+        return EngineResult.Completed(details, listOf(facts), incomplete)
     }
 
     companion object {
@@ -154,9 +159,10 @@ internal class PdfScanner(private val maxBytes: Long) {
                 c == '/'.code -> {
                     val (name, wasEscaped, next) = readName(input)
                     if (name.isNotEmpty()) {
-                        keywords[name] = (keywords[name] ?: 0) + 1
+                        // Só nomes relevantes são contados: evita crescimento ilimitado com nomes únicos.
+                        if (name in PdfEngine.INTERESTING) keywords[name] = (keywords[name] ?: 0) + 1
                         if (wasEscaped && name in PdfEngine.INTERESTING) obfuscated += name
-                        dictNames += name
+                        if (name in STREAM_NAMES) dictNames += name
                         pendingMetadataKey = if (name in PdfEngine.METADATA_KEYS) name else null
                         pendingUri = name == "URI"
                     }
@@ -326,6 +332,7 @@ internal class PdfScanner(private val maxBytes: Long) {
     companion object {
         private val ENDSTREAM = "endstream".toByteArray()
         private val OTHER_FILTERS = setOf("ASCIIHexDecode", "ASCII85Decode", "LZWDecode", "RunLengthDecode", "DCTDecode", "JPXDecode", "Crypt")
+        private val STREAM_NAMES = OTHER_FILTERS + setOf("ObjStm", "FlateDecode")
         private const val MAX_COLLECT = 16 * 1024 * 1024
         private const val MAX_INFLATED = 16 * 1024 * 1024
     }

@@ -44,6 +44,13 @@ class ZipEngine @Inject constructor() : AnalysisEngine {
                 facts.topLevelNames.takeIf { it.isNotEmpty() }?.let { DetailEntry("Conteúdo (até 200 itens)", it.joinToString("\n"), monospace = true) },
             ),
         )
-        return EngineResult.Completed(details = listOf(details), facts = listOf(facts))
+        val incomplete = buildList {
+            if (facts.entryLimitExceeded) add("limite de entradas atingido")
+            if (facts.nestingLimitReached) add("arquivos aninhados além da profundidade configurada")
+            if (facts.encryptedEntries.isNotEmpty()) add("${facts.encryptedEntries.size} entrada(s) cifrada(s)")
+            if (facts.nestedFailures.isNotEmpty()) add("${facts.nestedFailures.size} arquivo(s) interno(s) não inspecionado(s)")
+            if (facts.bombIndicators.isNotEmpty()) add("inspeção interrompida por limites de descompactação")
+        }
+        return EngineResult.Completed(details = listOf(details), facts = listOf(facts), incomplete = incomplete)
     }
 }

@@ -106,4 +106,11 @@ class ZipEngineTest {
         assertTrue(facts.entryLimitExceeded)
         assertEquals(10, facts.entryCount)
     }
+
+    @Test
+    fun limitsReached_markInspectionIncomplete() = runTest {
+        val file = temp.newFile().apply { writeBytes(TestFiles.zip((1..30).map { ZipSpec("f$it.txt", "x".toByteArray()) })) }
+        val result = engine.analyze(TestFiles.input(file, FileFormat.ZIP, AnalysisLimits(maxArchiveEntries = 10))) as EngineResult.Completed
+        assertTrue(result.incomplete.isNotEmpty())
+    }
 }

@@ -29,6 +29,8 @@ data class EngineOutcome(
     val structural: Boolean,
     val failureReason: String? = null,
     val details: List<DetailSection> = emptyList(),
+    /** Inspeção concluída, mas parcial: o resultado não pode ser "seguro". */
+    val incomplete: List<String> = emptyList(),
 )
 
 @Serializable

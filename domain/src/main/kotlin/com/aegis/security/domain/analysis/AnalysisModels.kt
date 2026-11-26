@@ -78,6 +78,8 @@ sealed interface EngineResult {
     data class Completed(
         val details: List<DetailSection> = emptyList(),
         val facts: List<AnalysisFact> = emptyList(),
+        /** Partes que não puderam ser inspecionadas (limites, cifragem, formatos não suportados). */
+        val incomplete: List<String> = emptyList(),
     ) : EngineResult
 
     data class Failed(val reason: String, val cause: Throwable? = null) : EngineResult

@@ -170,7 +170,7 @@ class AnalyzeFileUseCase @Inject constructor(
         return when (result) {
             is EngineResult.Completed -> {
                 facts += result.facts
-                EngineOutcome(descriptor.id, descriptor.displayName, EngineStatus.COMPLETED, descriptor.structural, details = result.details)
+                EngineOutcome(descriptor.id, descriptor.displayName, EngineStatus.COMPLETED, descriptor.structural, details = result.details, incomplete = result.incomplete)
             }
             is EngineResult.Failed ->
                 EngineOutcome(descriptor.id, descriptor.displayName, EngineStatus.FAILED, descriptor.structural, failureReason = result.reason)

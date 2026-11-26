@@ -53,7 +53,8 @@ class ElfEngine @Inject constructor() : AnalysisEngine {
             contentMatches = scan.matches.keys - UPX_MARKER,
             urls = scan.urls,
         )
-        return EngineResult.Completed(details(facts), listOf(facts))
+        val incomplete = if (scan.truncated) listOf("varredura de strings limitada aos primeiros ${input.limits.maxContentScanMb} MB") else emptyList()
+        return EngineResult.Completed(details(facts), listOf(facts), incomplete)
     }
 
     internal fun parse(bin: BinaryFile): ElfFacts {

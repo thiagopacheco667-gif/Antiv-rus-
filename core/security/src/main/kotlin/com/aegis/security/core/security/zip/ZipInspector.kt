@@ -102,7 +102,7 @@ internal class ZipInspector(private val limits: AnalysisLimits, private val work
                 if (entry.isDirectory || entry.name.substringAfterLast('.', "").lowercase() !in ARCHIVE_EXTENSIONS) continue
                 val path = prefix + entry.name
                 acc.nested += path
-                if (depth + 1 > limits.maxNestingDepth) {
+                if (depth + 1 > limits.maxNestingDepth || acc.nested.size > MAX_NESTED_ARCHIVES) {
                     acc.nestingLimitReached = true
                     continue
                 }
@@ -118,7 +118,12 @@ internal class ZipInspector(private val limits: AnalysisLimits, private val work
         }
         val temp = File.createTempFile("nested", ".zip", workDir)
         try {
-            val written = extractBounded(bin, entry, temp, path) ?: return
+            val written = try {
+                extractBounded(bin, entry, temp, path)
+            } catch (error: MalformedFileException) {
+                acc.nestedFailures += "$path: ${error.message}"
+                null
+            } ?: return
             if (written < 22) return
             val nested = try {
                 ZipDirectoryParser.parse(temp, limits.maxArchiveEntries)
@@ -284,6 +289,8 @@ internal class ZipInspector(private val limits: AnalysisLimits, private val work
         private const val DEFLATED = 8
         private const val CHUNK = 64 * 1024
         private const val RATIO_MIN_SIZE = 1L * 1024 * 1024
+        /** Limite global de arquivos compactados internos inspecionados (todas as profundidades). */
+        private const val MAX_NESTED_ARCHIVES = 100
         private val DRIVE = Regex("^[A-Za-z]:")
 
         /** Caracteres de controle bidirecional usados para disfarçar extensões (ex.: U+202E). */

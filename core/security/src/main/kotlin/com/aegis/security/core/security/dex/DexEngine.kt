@@ -37,6 +37,7 @@ class DexEngine @Inject constructor() : AnalysisEngine {
     override val descriptor = EngineDescriptor("dex", "Analisador de DEX", setOf(FileFormat.DEX))
 
     override suspend fun analyze(input: AnalysisInput): EngineResult {
+        var truncated = false
         val facts = BinaryFile(input.file).use { bin ->
             if (bin.length < HEADER_SIZE) return EngineResult.Failed("cabeçalho DEX truncado")
             val header = bin.bytes(0, HEADER_SIZE)
@@ -57,6 +58,7 @@ class DexEngine @Inject constructor() : AnalysisEngine {
             }
 
             val scan = ContentScanner.scan(input.file, API_PATTERNS.keys, input.limits.maxContentScanBytes)
+            truncated = scan.truncated
             DexFacts(
                 version = version,
                 declaredFileSize = bin.u32(32),
@@ -85,7 +87,8 @@ class DexEngine @Inject constructor() : AnalysisEngine {
                 DetailEntry("APIs relevantes", facts.apiReferences.ifEmpty { listOf("Nenhuma") }.joinToString("\n")),
             ),
         )
-        return EngineResult.Completed(listOf(details), listOf(facts))
+        val incomplete = if (truncated) listOf("varredura de strings limitada aos primeiros ${input.limits.maxContentScanMb} MB") else emptyList()
+        return EngineResult.Completed(listOf(details), listOf(facts), incomplete)
     }
 
     companion object {
