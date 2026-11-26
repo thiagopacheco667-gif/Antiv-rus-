@@ -14,4 +14,6 @@ data class ScanRecord(
     val verdict: Verdict,
     val origin: AnalysisOrigin,
     val evidenceSummary: String,
+    /** Relatório detalhado; nulo apenas para registros que não puderam ser lidos. */
+    val report: AnalysisReport? = null,
 )

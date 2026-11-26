@@ -19,4 +19,10 @@
     <string name="core_ui_origin_local">Análise local</string>
     <string name="core_ui_origin_local_and_virustotal">Local + VirusTotal</string>
     <string name="core_ui_origin_unknown">Origem desconhecida</string>
+
+    <string name="core_ui_severity_info">Informativo</string>
+    <string name="core_ui_severity_low">Baixa</string>
+    <string name="core_ui_severity_medium">Média</string>
+    <string name="core_ui_severity_high">Alta</string>
+    <string name="core_ui_severity_critical">Crítica</string>
 </resources>

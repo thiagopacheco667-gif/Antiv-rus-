@@ -7,6 +7,7 @@
     <string name="feature_dashboard_scanner_ready">Mecanismos locais prontos</string>
     <string name="feature_dashboard_scanner_unavailable">Análise ainda indisponível</string>
     <string name="feature_dashboard_scanner_unavailable_detail">Nenhum mecanismo de análise está instalado nesta versão. Nenhum arquivo será classificado sem uma análise real.</string>
+    <string name="feature_dashboard_open_record">Abrir resultado</string>
     <string name="feature_dashboard_scanner_engines">Mecanismos ativos: %1$d</string>
     <string name="feature_dashboard_scanner_formats">Formatos: %1$s</string>
 

@@ -17,7 +17,9 @@ internal object DatabaseModule {
     @Provides
     @Singleton
     fun providesAegisDatabase(@ApplicationContext context: Context): AegisDatabase =
-        Room.databaseBuilder(context, AegisDatabase::class.java, AegisDatabase.NAME).build()
+        Room.databaseBuilder(context, AegisDatabase::class.java, AegisDatabase.NAME)
+            .addMigrations(*AegisDatabase.ALL_MIGRATIONS)
+            .build()
 
     @Provides
     fun providesScanRecordDao(database: AegisDatabase): ScanRecordDao = database.scanRecordDao()

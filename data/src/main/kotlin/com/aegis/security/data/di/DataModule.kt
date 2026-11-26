@@ -11,7 +11,17 @@ import com.aegis.security.core.common.dispatchers.AegisDispatchers
 import com.aegis.security.core.common.dispatchers.ApplicationScope
 import com.aegis.security.core.common.dispatchers.Dispatcher
 import com.aegis.security.data.local.DataStoreUserPreferencesRepository
+import com.aegis.security.data.local.KeystoreTokenCipher
+import com.aegis.security.data.local.SafFileStager
+import com.aegis.security.data.local.TokenCipher
+import com.aegis.security.data.remote.BackendReputationRepository
+import com.aegis.security.data.remote.Clock
+import com.aegis.security.data.remote.CoroutineSleeper
+import com.aegis.security.data.remote.Sleeper
+import com.aegis.security.data.remote.SystemClock
 import com.aegis.security.data.repository.RoomScanHistoryRepository
+import com.aegis.security.domain.repository.FileStager
+import com.aegis.security.domain.repository.ReputationRepository
 import com.aegis.security.domain.repository.ScanHistoryRepository
 import com.aegis.security.domain.repository.UserPreferencesRepository
 import dagger.Binds
@@ -31,9 +41,23 @@ internal abstract class RepositoryModule {
     abstract fun bindsScanHistoryRepository(impl: RoomScanHistoryRepository): ScanHistoryRepository
 
     @Binds
-    abstract fun bindsUserPreferencesRepository(
-        impl: DataStoreUserPreferencesRepository,
-    ): UserPreferencesRepository
+    abstract fun bindsUserPreferencesRepository(impl: DataStoreUserPreferencesRepository): UserPreferencesRepository
+
+    @Binds
+    abstract fun bindsFileStager(impl: SafFileStager): FileStager
+
+    @Binds
+    @Singleton
+    abstract fun bindsReputationRepository(impl: BackendReputationRepository): ReputationRepository
+
+    @Binds
+    abstract fun bindsTokenCipher(impl: KeystoreTokenCipher): TokenCipher
+
+    @Binds
+    abstract fun bindsClock(impl: SystemClock): Clock
+
+    @Binds
+    abstract fun bindsSleeper(impl: CoroutineSleeper): Sleeper
 }
 
 @Module

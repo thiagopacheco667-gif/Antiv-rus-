@@ -6,7 +6,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
- * Linha do histórico. Guarda somente metadados e o resumo das evidências;
+ * Linha do histórico. Guarda somente metadados e o relatório de evidências (JSON);
  * o conteúdo do arquivo analisado nunca é armazenado.
  */
 @Entity(
@@ -36,4 +36,7 @@ data class ScanRecordEntity(
     val origin: String,
     @ColumnInfo(name = "evidence_summary")
     val evidenceSummary: String,
+    /** Adicionada na versão 2 do banco. */
+    @ColumnInfo(name = "report_json")
+    val reportJson: String? = null,
 )

@@ -14,8 +14,14 @@ interface ScanHistoryRepository {
 
     fun observeCountByVerdict(verdict: Verdict): Flow<Int>
 
+    fun observeRecord(id: Long): Flow<ScanRecord?>
+
+    suspend fun getRecord(id: Long): ScanRecord?
+
     /** Persiste um registro e devolve o id gerado. */
     suspend fun save(record: ScanRecord): Long
+
+    suspend fun update(record: ScanRecord)
 
     suspend fun delete(id: Long)
 

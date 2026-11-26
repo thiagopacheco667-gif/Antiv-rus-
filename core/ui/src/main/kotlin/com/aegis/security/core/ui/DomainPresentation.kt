@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import com.aegis.security.core.designsystem.theme.StatusTone
+import com.aegis.security.domain.analysis.Severity
 import com.aegis.security.domain.model.AnalysisOrigin
 import com.aegis.security.domain.model.FileFormat
 import com.aegis.security.domain.model.Verdict
@@ -86,3 +87,21 @@ fun AnalysisOrigin.label(): String = stringResource(
         AnalysisOrigin.UNKNOWN -> R.string.core_ui_origin_unknown
     },
 )
+
+@Composable
+fun Severity.label(): String = stringResource(
+    when (this) {
+        Severity.INFO -> R.string.core_ui_severity_info
+        Severity.LOW -> R.string.core_ui_severity_low
+        Severity.MEDIUM -> R.string.core_ui_severity_medium
+        Severity.HIGH -> R.string.core_ui_severity_high
+        Severity.CRITICAL -> R.string.core_ui_severity_critical
+    },
+)
+
+val Severity.tone: StatusTone
+    get() = when (this) {
+        Severity.INFO, Severity.LOW -> StatusTone.INFO
+        Severity.MEDIUM -> StatusTone.SUSPICIOUS
+        Severity.HIGH, Severity.CRITICAL -> StatusTone.THREAT
+    }

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_reports_title">Resultado</string>
+    <string name="feature_reports_not_found_title">Registro não encontrado</string>
+    <string name="feature_reports_not_found_message">Este registro foi removido do histórico.</string>
+    <string name="feature_reports_legacy_title">Relatório indisponível</string>
+    <string name="feature_reports_legacy_message">O relatório detalhado deste registro não pôde ser lido. Analise o arquivo novamente.</string>
+
+    <string name="feature_reports_explanation">Por que esta classificação</string>
+    <string name="feature_reports_file_section">Arquivo</string>
+    <string name="feature_reports_name">Nome</string>
+    <string name="feature_reports_format">Formato real</string>
+    <string name="feature_reports_size">Tamanho</string>
+    <string name="feature_reports_date">Analisado em</string>
+    <string name="feature_reports_duration">Tempo de análise</string>
+    <string name="feature_reports_copy_hash">Copiar SHA-256</string>
+    <string name="feature_reports_no_hash">Hash não calculado</string>
+
+    <string name="feature_reports_findings_section">Indicadores encontrados (%1$d)</string>
+    <string name="feature_reports_no_findings">Nenhum indicador foi encontrado pelas regras locais.</string>
+    <string name="feature_reports_evidence">Evidência: %1$s</string>
+    <string name="feature_reports_show_rationale">Toque para ver a justificativa técnica</string>
+
+    <string name="feature_reports_local_section">Resultado local</string>
+    <string name="feature_reports_local_verdict">Classificação local</string>
+    <string name="feature_reports_engine_completed">Concluído</string>
+    <string name="feature_reports_engine_failed">Falhou: %1$s</string>
+    <string name="feature_reports_no_engines">Nenhum mecanismo estrutural se aplica a este formato.</string>
+
+    <string name="feature_reports_online_section">Resultado VirusTotal</string>
+    <string name="feature_reports_online_not_requested">A reputação online não foi consultada. Nada foi compartilhado.</string>
+    <string name="feature_reports_online_not_found">O VirusTotal não conhece este hash. Isso não indica que o arquivo é seguro.</string>
+    <string name="feature_reports_online_failed">A consulta falhou: %1$s. O resultado considera apenas a análise local.</string>
+    <string name="feature_reports_online_not_configured">Configure o serviço online em Configurações para consultar o VirusTotal.</string>
+    <string name="feature_reports_vt_malicious">Detectaram ameaça</string>
+    <string name="feature_reports_vt_suspicious">Consideraram suspeito</string>
+    <string name="feature_reports_vt_clean">Não detectaram</string>
+    <string name="feature_reports_vt_inconclusive">Inconclusivos</string>
+    <string name="feature_reports_vt_date">Análise do VirusTotal: %1$s</string>
+    <string name="feature_reports_vt_names">Nomes das detecções</string>
+    <string name="feature_reports_vt_disclaimer">Ausência de detecção não garante que o arquivo seja seguro.</string>
+    <string name="feature_reports_vt_open">Abrir relatório no VirusTotal</string>
+    <string name="feature_reports_lookup_button">CONSULTAR REPUTAÇÃO ONLINE</string>
+    <string name="feature_reports_upload_button">Enviar arquivo completo para análise</string>
+    <string name="feature_reports_looking_up">Consultando o VirusTotal…</string>
+    <string name="feature_reports_uploading">Enviando arquivo… %1$d%%</string>
+    <string name="feature_reports_waiting">Aguardando a análise externa (%1$s)…</string>
+    <string name="feature_reports_cancel">Cancelar</string>
+
+    <string name="feature_reports_lookup_dialog_title">Compartilhar o hash?</string>
+    <string name="feature_reports_lookup_dialog_message">O hash SHA-256 deste arquivo será enviado ao seu servidor AEGIS e ao VirusTotal. Hashes consultados podem ser registrados pelo serviço e ficar acessíveis a terceiros, como assinantes do VirusTotal. O conteúdo do arquivo não é enviado.</string>
+    <string name="feature_reports_lookup_dialog_confirm">Compartilhar hash</string>
+
+    <string name="feature_reports_upload_dialog_title">Enviar o arquivo completo?</string>
+    <string name="feature_reports_upload_dialog_message">O arquivo inteiro será enviado ao VirusTotal. Arquivos enviados passam a fazer parte do acervo do serviço e podem ser baixados por terceiros (parceiros e assinantes). Não envie documentos pessoais, arquivos privados ou dados confidenciais.</string>
+    <string name="feature_reports_upload_dialog_personal">Atenção: documentos e arquivos compactados frequentemente contêm dados pessoais.</string>
+    <string name="feature_reports_upload_dialog_ack">Entendo que o arquivo pode se tornar acessível a terceiros.</string>
+    <string name="feature_reports_upload_dialog_confirm">Enviar arquivo</string>
+
+    <string name="feature_reports_reselect_title">Selecione o arquivo novamente</string>
+    <string name="feature_reports_reselect_message">Por privacidade, o AEGIS não guarda acesso ao arquivo. Selecione-o de novo; o SHA-256 será conferido antes de qualquer envio.</string>
+    <string name="feature_reports_reselect_confirm">Selecionar</string>
+
+    <string name="feature_reports_open_details">Detalhes técnicos</string>
+</resources>

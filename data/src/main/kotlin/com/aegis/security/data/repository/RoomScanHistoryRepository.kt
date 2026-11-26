@@ -25,7 +25,15 @@ internal class RoomScanHistoryRepository @Inject constructor(
     override fun observeCountByVerdict(verdict: Verdict): Flow<Int> =
         dao.observeCountByVerdict(verdict.name)
 
+    override fun observeRecord(id: Long): Flow<ScanRecord?> = dao.observeById(id).map { it?.asDomain() }
+
+    override suspend fun getRecord(id: Long): ScanRecord? = dao.getById(id)?.asDomain()
+
     override suspend fun save(record: ScanRecord): Long = dao.insert(record.asEntity())
+
+    override suspend fun update(record: ScanRecord) {
+        check(dao.update(record.asEntity()) == 1) { "Registro ${record.id} não existe mais" }
+    }
 
     override suspend fun delete(id: Long) {
         dao.deleteById(id)

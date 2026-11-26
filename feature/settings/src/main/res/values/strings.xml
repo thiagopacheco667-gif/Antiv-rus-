@@ -7,22 +7,46 @@
     <string name="feature_settings_theme_light">Claro</string>
     <string name="feature_settings_theme_system">Seguir o sistema</string>
 
-    <string name="feature_settings_section_analysis">Análise</string>
-    <string name="feature_settings_analysis_preferences">Preferências de análise</string>
-    <string name="feature_settings_analysis_limits">Limites de análise</string>
-    <string name="feature_settings_requires_engines">Disponível quando os mecanismos de análise forem instalados.</string>
+    <string name="feature_settings_section_analysis">Mecanismos de análise</string>
+    <string name="feature_settings_engines">%1$d mecanismos ativos · %2$d regras locais</string>
+    <string name="feature_settings_yara">Regras YARA</string>
+    <string name="feature_settings_integrated">Integrado</string>
+    <string name="feature_settings_not_integrated">Não integrado</string>
 
-    <string name="feature_settings_section_online">Serviço online</string>
-    <string name="feature_settings_virustotal">VirusTotal</string>
-    <string name="feature_settings_virustotal_unavailable">A integração com o VirusTotal ainda não existe nesta versão.</string>
+    <string name="feature_settings_section_limits">Limites de análise</string>
+    <string name="feature_settings_limit_file_size">Tamanho máximo do arquivo</string>
+    <string name="feature_settings_limit_entries">Entradas por arquivo compactado</string>
+    <string name="feature_settings_limit_uncompressed">Total descompactado</string>
+    <string name="feature_settings_limit_ratio">Razão de compressão</string>
+    <string name="feature_settings_limit_depth">Profundidade de aninhamento</string>
+    <string name="feature_settings_limit_scan">Conteúdo varrido por arquivo</string>
+    <string name="feature_settings_decrease">Diminuir %1$s</string>
+    <string name="feature_settings_increase">Aumentar %1$s</string>
 
-    <string name="feature_settings_unavailable">Indisponível</string>
+    <string name="feature_settings_section_online">Serviço online (VirusTotal)</string>
+    <string name="feature_settings_online_intro">O AEGIS consulta o VirusTotal por meio do seu próprio servidor AEGIS (pasta backend/ do projeto). A chave da API fica somente no servidor; aqui você informa o endereço e o token de acesso dele.</string>
+    <string name="feature_settings_online_url">Endereço do servidor (HTTPS)</string>
+    <string name="feature_settings_online_token">Token de acesso</string>
+    <string name="feature_settings_online_token_keep">Novo token (vazio mantém o atual)</string>
+    <string name="feature_settings_online_save">Salvar</string>
+    <string name="feature_settings_online_test">Testar</string>
+    <string name="feature_settings_online_testing">Testando conexão…</string>
+    <string name="feature_settings_online_ok">Conectado · API %1$s · envio de arquivos: %2$s · consultas restantes hoje: %3$s</string>
+    <string name="feature_settings_online_fail">Falha: %1$s</string>
+    <string name="feature_settings_online_remove">Remover configuração e token</string>
+    <string name="feature_settings_online_saved">Configuração salva.</string>
+    <string name="feature_settings_online_removed">Configuração removida.</string>
+    <string name="feature_settings_online_invalid_url">O endereço precisa começar com https://</string>
+    <string name="feature_settings_online_terms">A API pública do VirusTotal é limitada (4 consultas/min, 500/dia) e não pode ser usada comercialmente. O modo é definido no servidor.</string>
+    <string name="feature_settings_yes">sim</string>
+    <string name="feature_settings_no">não</string>
 
     <string name="feature_settings_section_privacy">Privacidade</string>
-    <string name="feature_settings_privacy_local_default">A análise local é sempre o padrão.</string>
-    <string name="feature_settings_privacy_consent">Nada é enviado a serviços externos sem sua confirmação explícita.</string>
-    <string name="feature_settings_privacy_no_internet">Esta versão não tem permissão de acesso à internet.</string>
-    <string name="feature_settings_privacy_metadata_only">O histórico guarda apenas metadados, nunca cópias dos arquivos.</string>
+    <string name="feature_settings_privacy_local_default">A análise local é sempre o padrão e funciona sem internet.</string>
+    <string name="feature_settings_privacy_consent">Nada é enviado a serviços externos sem sua confirmação; o envio do arquivo completo exige uma confirmação separada.</string>
+    <string name="feature_settings_privacy_internet">A internet é usada somente para consultas ao seu servidor AEGIS, sempre por HTTPS.</string>
+    <string name="feature_settings_privacy_metadata_only">O histórico guarda apenas metadados e evidências, nunca cópias dos arquivos.</string>
+    <string name="feature_settings_privacy_token">O token de acesso é cifrado com uma chave do Android Keystore.</string>
     <string name="feature_settings_privacy_no_backup">Os dados do app ficam fora de backups em nuvem e de transferências entre aparelhos.</string>
 
     <string name="feature_settings_section_data">Dados</string>
@@ -39,7 +63,7 @@
     <string name="feature_settings_section_about">Sobre o AEGIS</string>
     <string name="feature_settings_about_name" translatable="false">AEGIS SECURITY</string>
     <string name="feature_settings_about_version">Versão %1$s</string>
-    <string name="feature_settings_about_disclaimer">Analisador de segurança de arquivos. Nenhuma verificação garante com 100% de certeza que um arquivo está livre de malware.</string>
+    <string name="feature_settings_about_disclaimer">Analisador de segurança de arquivos com inspeção estática local e reputação opcional via VirusTotal. Nenhuma verificação garante com 100% de certeza que um arquivo está livre de malware.</string>
 
     <string name="feature_settings_error_title">Não foi possível carregar as configurações</string>
     <string name="feature_settings_error_message">Tente novamente mais tarde.</string>

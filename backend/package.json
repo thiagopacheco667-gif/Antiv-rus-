@@ -1,0 +1,16 @@
+{
+  "name": "aegis-backend",
+  "version": "1.0.0",
+  "description": "Backend seguro do AEGIS SECURITY: intermedeia a VirusTotal API v3 sem expor a chave no aplicativo.",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/index.mjs",
+    "test": "node --test test/server.test.mjs",
+    "token": "node scripts/new-token.mjs"
+  },
+  "license": "UNLICENSED"
+}

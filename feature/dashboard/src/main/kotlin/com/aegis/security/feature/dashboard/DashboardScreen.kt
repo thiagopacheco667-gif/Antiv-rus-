@@ -1,5 +1,6 @@
 package com.aegis.security.feature.dashboard
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -59,6 +60,7 @@ import com.aegis.security.domain.model.FileFormat
 @Composable
 internal fun DashboardRoute(
     onAnalyzeFile: () -> Unit,
+    onOpenRecord: (Long) -> Unit,
     onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel(),
@@ -67,6 +69,7 @@ internal fun DashboardRoute(
     DashboardScreen(
         uiState = uiState,
         onAnalyzeFile = onAnalyzeFile,
+        onOpenRecord = onOpenRecord,
         onOpenHistory = onOpenHistory,
         onOpenSettings = onOpenSettings,
     )
@@ -76,6 +79,7 @@ internal fun DashboardRoute(
 internal fun DashboardScreen(
     uiState: DashboardUiState,
     onAnalyzeFile: () -> Unit,
+    onOpenRecord: (Long) -> Unit,
     onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
@@ -114,6 +118,7 @@ internal fun DashboardScreen(
                     scanner = uiState.scanner,
                     summary = uiState.summary,
                     onAnalyzeFile = onAnalyzeFile,
+                    onOpenRecord = onOpenRecord,
                     onOpenHistory = onOpenHistory,
                     onOpenSettings = onOpenSettings,
                 )
@@ -127,6 +132,7 @@ private fun DashboardContent(
     scanner: ScannerStatus,
     summary: DashboardSummary,
     onAnalyzeFile: () -> Unit,
+    onOpenRecord: (Long) -> Unit,
     onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
@@ -170,7 +176,7 @@ private fun DashboardContent(
         }
         item(key = "last") {
             val last = summary.lastScan
-            AegisCard(modifier = Modifier.fillMaxWidth()) {
+            AegisCard(modifier = Modifier.fillMaxWidth(), onClick = last?.let { { onOpenRecord(it.id) } }) {
                 if (last != null) {
                     ScanRecordRow(record = last)
                 } else {
@@ -196,7 +202,12 @@ private fun DashboardContent(
                 AegisCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp)) {
                     older.forEachIndexed { index, record ->
                         if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                        ScanRecordRow(record = record, modifier = Modifier.padding(vertical = 12.dp))
+                        ScanRecordRow(
+                            record = record,
+                            modifier = Modifier
+                                .clickable(onClickLabel = stringResource(R.string.feature_dashboard_open_record)) { onOpenRecord(record.id) }
+                                .padding(vertical = 12.dp),
+                        )
                     }
                 }
             }

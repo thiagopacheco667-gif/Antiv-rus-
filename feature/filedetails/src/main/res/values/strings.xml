@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_filedetails_title">Detalhes técnicos</string>
+    <string name="feature_filedetails_missing_title">Detalhes indisponíveis</string>
+    <string name="feature_filedetails_missing_message">O relatório deste registro não está disponível.</string>
+    <string name="feature_filedetails_not_applicable">Não aplicável</string>
+    <string name="feature_filedetails_not_applicable_detail">Esta seção não se aplica ao formato do arquivo ou não houve dados.</string>
+    <string name="feature_filedetails_empty">Sem itens.</string>
+
+    <string name="feature_filedetails_kind_metadata">Metadados</string>
+    <string name="feature_filedetails_kind_hashes">Hashes</string>
+    <string name="feature_filedetails_kind_signature">Assinatura</string>
+    <string name="feature_filedetails_kind_permissions">Permissões</string>
+    <string name="feature_filedetails_kind_components">Componentes</string>
+    <string name="feature_filedetails_kind_structure">Estrutura interna</string>
+    <string name="feature_filedetails_kind_indicators">Indicadores suspeitos</string>
+    <string name="feature_filedetails_kind_external">Detecções externas</string>
+
+    <string name="feature_filedetails_file_metadata">Arquivo</string>
+    <string name="feature_filedetails_name">Nome</string>
+    <string name="feature_filedetails_real_format">Formato identificado</string>
+    <string name="feature_filedetails_extension">Extensão</string>
+    <string name="feature_filedetails_size">Tamanho</string>
+    <string name="feature_filedetails_mime">Tipo informado pelo provedor</string>
+    <string name="feature_filedetails_modified">Modificado em</string>
+    <string name="feature_filedetails_provider">Origem</string>
+    <string name="feature_filedetails_hashes">Hashes calculados</string>
+    <string name="feature_filedetails_indicators">Regras locais acionadas</string>
+    <string name="feature_filedetails_external">VirusTotal</string>
+    <string name="feature_filedetails_vt_unknown">Hash desconhecido pelo serviço</string>
+</resources>

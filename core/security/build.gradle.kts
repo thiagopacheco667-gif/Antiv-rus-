@@ -10,4 +10,5 @@ android {
 dependencies {
     api(projects.domain)
     implementation(projects.core.common)
+    implementation(libs.kotlinx.coroutines.android)
 }

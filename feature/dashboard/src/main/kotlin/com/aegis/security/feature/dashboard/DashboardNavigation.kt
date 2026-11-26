@@ -9,12 +9,14 @@ data object DashboardDestination
 
 fun NavGraphBuilder.dashboardScreen(
     onAnalyzeFile: () -> Unit,
+    onOpenRecord: (Long) -> Unit,
     onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     composable<DashboardDestination> {
         DashboardRoute(
             onAnalyzeFile = onAnalyzeFile,
+            onOpenRecord = onOpenRecord,
             onOpenHistory = onOpenHistory,
             onOpenSettings = onOpenSettings,
         )

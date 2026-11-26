@@ -44,6 +44,7 @@ import com.aegis.security.domain.model.ScanRecord
 @Composable
 internal fun HistoryRoute(
     onNavigateBack: () -> Unit,
+    onOpenRecord: (Long) -> Unit,
     viewModel: HistoryViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -55,6 +56,7 @@ internal fun HistoryRoute(
         confirmation = confirmation,
         operationFailed = operationFailed,
         onNavigateBack = onNavigateBack,
+        onOpenRecord = onOpenRecord,
         onRequestDelete = viewModel::requestDelete,
         onRequestClearAll = viewModel::requestClearAll,
         onConfirm = viewModel::confirm,
@@ -69,6 +71,7 @@ internal fun HistoryScreen(
     confirmation: HistoryConfirmation?,
     operationFailed: Boolean,
     onNavigateBack: () -> Unit,
+    onOpenRecord: (Long) -> Unit,
     onRequestDelete: (ScanRecord) -> Unit,
     onRequestClearAll: () -> Unit,
     onConfirm: () -> Unit,
@@ -129,7 +132,7 @@ internal fun HistoryScreen(
                         modifier = Modifier.align(Alignment.Center),
                     )
                 } else {
-                    HistoryList(records = uiState.records, onRequestDelete = onRequestDelete)
+                    HistoryList(records = uiState.records, onOpenRecord = onOpenRecord, onRequestDelete = onRequestDelete)
                 }
             }
         }
@@ -143,6 +146,7 @@ internal fun HistoryScreen(
 @Composable
 private fun HistoryList(
     records: List<ScanRecord>,
+    onOpenRecord: (Long) -> Unit,
     onRequestDelete: (ScanRecord) -> Unit,
 ) {
     LazyColumn(
@@ -153,6 +157,7 @@ private fun HistoryList(
         items(items = records, key = { it.id }) { record ->
             AegisCard(
                 modifier = Modifier.fillMaxWidth(),
+                onClick = { onOpenRecord(record.id) },
                 contentPadding = PaddingValues(start = 16.dp, end = 4.dp, top = 14.dp, bottom = 14.dp),
             ) {
                 ScanRecordRow(

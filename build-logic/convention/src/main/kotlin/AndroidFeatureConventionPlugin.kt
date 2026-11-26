@@ -21,6 +21,7 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
                 add("implementation", project(":core:designsystem"))
                 add("implementation", project(":core:ui"))
 
+                add("implementation", libs.library("androidx.activity.compose"))
                 add("implementation", libs.library("androidx.compose.material3"))
                 add("implementation", libs.library("androidx.compose.material.icons.extended"))
                 add("implementation", libs.library("androidx.lifecycle.runtime.compose"))
@@ -28,6 +29,8 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
                 add("implementation", libs.library("androidx.navigation.compose"))
                 add("implementation", libs.library("androidx.hilt.navigation.compose"))
                 add("implementation", libs.library("kotlinx.serialization.json"))
+
+                add("testImplementation", libs.library("kotlinx.coroutines.test"))
             }
         }
     }

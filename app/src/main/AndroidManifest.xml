@@ -3,13 +3,10 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <!--
-        Etapa 1: o app não acessa a rede. A remoção explícita garante que nenhuma
-        dependência adicione esta permissão por merge de manifesto. A Etapa 7
-        (backend + VirusTotal) substituirá esta linha pela permissão real.
+        Usada somente para consultas ao backend AEGIS (VirusTotal), sempre após consentimento.
+        Nenhuma permissão de armazenamento: arquivos chegam pelo Storage Access Framework.
     -->
-    <uses-permission
-        android:name="android.permission.INTERNET"
-        tools:node="remove" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:name=".AegisApplication"
@@ -18,6 +15,7 @@
         android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Aegis.Starting"
