@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_designsystem_brand_name" translatable="false">AEGIS</string>
+    <string name="core_designsystem_brand_tagline" translatable="false">SECURITY</string>
+    <string name="core_designsystem_logo_description">Logotipo AEGIS Security</string>
+    <string name="core_designsystem_navigate_back">Voltar</string>
+</resources>

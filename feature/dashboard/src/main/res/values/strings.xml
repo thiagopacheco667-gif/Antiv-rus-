@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_dashboard_open_settings">Abrir configurações</string>
+    <string name="feature_dashboard_analyze_file">ANALISAR ARQUIVO</string>
+
+    <string name="feature_dashboard_scanner_label">Estado do scanner</string>
+    <string name="feature_dashboard_scanner_ready">Mecanismos locais prontos</string>
+    <string name="feature_dashboard_scanner_unavailable">Análise ainda indisponível</string>
+    <string name="feature_dashboard_scanner_unavailable_detail">Nenhum mecanismo de análise está instalado nesta versão. Nenhum arquivo será classificado sem uma análise real.</string>
+    <string name="feature_dashboard_scanner_engines">Mecanismos ativos: %1$d</string>
+    <string name="feature_dashboard_scanner_formats">Formatos: %1$s</string>
+
+    <string name="feature_dashboard_files_analyzed">Arquivos analisados</string>
+    <string name="feature_dashboard_threats_detected">Ameaças detectadas</string>
+
+    <string name="feature_dashboard_last_analysis">Última análise</string>
+    <string name="feature_dashboard_empty_title">Nenhuma análise realizada</string>
+    <string name="feature_dashboard_empty_message">Quando você analisar um arquivo, o resultado aparecerá aqui.</string>
+    <string name="feature_dashboard_recent_activity">Atividade recente</string>
+    <string name="feature_dashboard_see_history">Ver histórico</string>
+
+    <string name="feature_dashboard_shortcuts">Atalhos</string>
+    <string name="feature_dashboard_shortcut_history">Histórico</string>
+    <string name="feature_dashboard_shortcut_settings">Configurações</string>
+
+    <string name="feature_dashboard_error_title">Não foi possível carregar o histórico</string>
+    <string name="feature_dashboard_error_message">Os números do painel não são exibidos enquanto o histórico não puder ser lido.</string>
+</resources>

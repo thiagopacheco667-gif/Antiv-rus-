@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_ui_verdict_safe_by_checks">Seguro segundo as verificações</string>
+    <string name="core_ui_verdict_suspicious">Suspeito</string>
+    <string name="core_ui_verdict_threat_detected">Ameaça detectada</string>
+    <string name="core_ui_verdict_inconclusive">Inconclusivo</string>
+    <string name="core_ui_verdict_analysis_error">Erro na análise</string>
+
+    <string name="core_ui_format_apk" translatable="false">APK</string>
+    <string name="core_ui_format_zip" translatable="false">ZIP</string>
+    <string name="core_ui_format_jar" translatable="false">JAR</string>
+    <string name="core_ui_format_dex" translatable="false">DEX</string>
+    <string name="core_ui_format_exe" translatable="false">EXE</string>
+    <string name="core_ui_format_dll" translatable="false">DLL</string>
+    <string name="core_ui_format_elf" translatable="false">ELF</string>
+    <string name="core_ui_format_pdf" translatable="false">PDF</string>
+    <string name="core_ui_format_unknown">Formato desconhecido</string>
+
+    <string name="core_ui_origin_local">Análise local</string>
+    <string name="core_ui_origin_local_and_virustotal">Local + VirusTotal</string>
+    <string name="core_ui_origin_unknown">Origem desconhecida</string>
+</resources>

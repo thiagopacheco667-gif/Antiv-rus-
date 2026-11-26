@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tema da janela; as cores da interface vêm do AegisTheme (Compose). -->
+    <style name="Theme.Aegis" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/aegis_graphite</item>
+    </style>
+
+    <!-- Splash screen (androidx.core:core-splashscreen), consistente de API 26 a 35. -->
+    <style name="Theme.Aegis.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/aegis_graphite</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_aegis_mark</item>
+        <item name="postSplashScreenTheme">@style/Theme.Aegis</item>
+    </style>
+</resources>

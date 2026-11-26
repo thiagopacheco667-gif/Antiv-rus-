@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_scanner_title">Analisar arquivo</string>
+
+    <string name="feature_scanner_select_file">Selecionar arquivo</string>
+    <string name="feature_scanner_select_unavailable">A seleção de arquivos pelo seletor do sistema ainda não está disponível nesta versão do AEGIS.</string>
+    <string name="feature_scanner_available">Disponível</string>
+    <string name="feature_scanner_unavailable">Indisponível nesta versão</string>
+
+    <string name="feature_scanner_formats_title">Formatos prioritários</string>
+    <string name="feature_scanner_format_available">disponível</string>
+    <string name="feature_scanner_format_unavailable">indisponível</string>
+    <string name="feature_scanner_formats_none">Nenhum formato pode ser analisado ainda. O formato real será identificado pelo conteúdo do arquivo, não pela extensão.</string>
+
+    <string name="feature_scanner_modes_title">Tipos de análise</string>
+    <string name="feature_scanner_local_title">Análise local</string>
+    <string name="feature_scanner_local_description">Executada inteiramente no aparelho, sem conexão com a internet. Os arquivos analisados nunca são executados.</string>
+    <string name="feature_scanner_online_title">Reputação online (VirusTotal)</string>
+    <string name="feature_scanner_online_description">Opcional. O hash ou o arquivo só são compartilhados após sua confirmação explícita, e o envio do arquivo completo exige uma confirmação separada.</string>
+
+    <string name="feature_scanner_privacy_title">Privacidade por padrão</string>
+    <string name="feature_scanner_privacy_body">Esta versão do AEGIS não tem permissão de acesso à internet: nenhum arquivo, hash ou dado sai do seu aparelho.</string>
+</resources>

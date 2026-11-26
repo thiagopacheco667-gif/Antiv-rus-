@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_history_title">Histórico</string>
+    <string name="feature_history_clear_all">Limpar histórico</string>
+    <string name="feature_history_delete_record">Excluir registro de %1$s</string>
+
+    <string name="feature_history_empty_title">Nenhum registro</string>
+    <string name="feature_history_empty_message">As análises concluídas ficam guardadas aqui. Apenas metadados são armazenados — nunca cópias dos arquivos.</string>
+    <string name="feature_history_error_title">Não foi possível ler o histórico</string>
+    <string name="feature_history_error_message">Tente novamente mais tarde.</string>
+
+    <string name="feature_history_delete_title">Excluir registro?</string>
+    <string name="feature_history_delete_message">O registro da análise de \"%1$s\" será removido do histórico. O arquivo em si não é afetado.</string>
+    <string name="feature_history_clear_title">Limpar todo o histórico?</string>
+    <string name="feature_history_clear_message">Todos os registros de análise serão removidos permanentemente. Nenhum arquivo do aparelho é afetado.</string>
+    <string name="feature_history_confirm_delete">Excluir</string>
+    <string name="feature_history_cancel">Cancelar</string>
+    <string name="feature_history_operation_failed">Não foi possível concluir a exclusão.</string>
+</resources>

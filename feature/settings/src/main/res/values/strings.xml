@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_settings_title">Configurações</string>
+
+    <string name="feature_settings_section_appearance">Aparência</string>
+    <string name="feature_settings_theme_dark">Escuro (padrão)</string>
+    <string name="feature_settings_theme_light">Claro</string>
+    <string name="feature_settings_theme_system">Seguir o sistema</string>
+
+    <string name="feature_settings_section_analysis">Análise</string>
+    <string name="feature_settings_analysis_preferences">Preferências de análise</string>
+    <string name="feature_settings_analysis_limits">Limites de análise</string>
+    <string name="feature_settings_requires_engines">Disponível quando os mecanismos de análise forem instalados.</string>
+
+    <string name="feature_settings_section_online">Serviço online</string>
+    <string name="feature_settings_virustotal">VirusTotal</string>
+    <string name="feature_settings_virustotal_unavailable">A integração com o VirusTotal ainda não existe nesta versão.</string>
+
+    <string name="feature_settings_unavailable">Indisponível</string>
+
+    <string name="feature_settings_section_privacy">Privacidade</string>
+    <string name="feature_settings_privacy_local_default">A análise local é sempre o padrão.</string>
+    <string name="feature_settings_privacy_consent">Nada é enviado a serviços externos sem sua confirmação explícita.</string>
+    <string name="feature_settings_privacy_no_internet">Esta versão não tem permissão de acesso à internet.</string>
+    <string name="feature_settings_privacy_metadata_only">O histórico guarda apenas metadados, nunca cópias dos arquivos.</string>
+    <string name="feature_settings_privacy_no_backup">Os dados do app ficam fora de backups em nuvem e de transferências entre aparelhos.</string>
+
+    <string name="feature_settings_section_data">Dados</string>
+    <string name="feature_settings_clear_history">Limpar histórico</string>
+    <string name="feature_settings_records_stored">%1$d registro(s) armazenado(s)</string>
+    <string name="feature_settings_no_records">Nenhum registro armazenado</string>
+    <string name="feature_settings_clear_dialog_title">Limpar todo o histórico?</string>
+    <string name="feature_settings_clear_dialog_message">Todos os registros de análise serão removidos permanentemente. Nenhum arquivo do aparelho é afetado.</string>
+    <string name="feature_settings_clear_confirm">Limpar</string>
+    <string name="feature_settings_cancel">Cancelar</string>
+    <string name="feature_settings_history_cleared">Histórico limpo.</string>
+    <string name="feature_settings_operation_failed">Não foi possível concluir a operação.</string>
+
+    <string name="feature_settings_section_about">Sobre o AEGIS</string>
+    <string name="feature_settings_about_name" translatable="false">AEGIS SECURITY</string>
+    <string name="feature_settings_about_version">Versão %1$s</string>
+    <string name="feature_settings_about_disclaimer">Analisador de segurança de arquivos. Nenhuma verificação garante com 100% de certeza que um arquivo está livre de malware.</string>
+
+    <string name="feature_settings_error_title">Não foi possível carregar as configurações</string>
+    <string name="feature_settings_error_message">Tente novamente mais tarde.</string>
+</resources>

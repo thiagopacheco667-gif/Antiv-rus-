@@ -1,0 +1,17 @@
+*.iml
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+build/
+/captures
+.externalNativeBuild
+.cxx
+.kotlin/
+*.apk
+*.aab
+*.keystore
+*.jks
+# Segredos nunca entram no repositório (chave VirusTotal fica só no backend)
+secrets.properties
+.env
