@@ -1,133 +1,83 @@
-# AEGIS SECURITY — Arquitetura (Etapa 1)
+# AEGIS SECURITY — Arquitetura
 
 ## 1. Visão geral
 
-Clean Architecture + MVVM, com fluxo unidirecional de dados:
+Clean Architecture + MVVM com fluxo unidirecional:
 
 ```
-UI (Compose) ──eventos──▶ ViewModel ──▶ UseCase ──▶ Repository (interface, :domain)
-     ▲                       │                           │
-     └──── StateFlow<UiState>┘          implementação em :data ──▶ Room / DataStore
+UI (Compose) ─eventos─▶ ViewModel ─▶ UseCase (:domain) ─▶ Repository / AnalysisEngine (interfaces)
+     ▲                     │                                   │
+     └── StateFlow<UiState>┘          :data (SAF, Room, DataStore, Keystore, backend) · :core:security (motores)
 ```
-
-- **:domain** é Kotlin puro (sem Android). Contém modelos, contratos de repositório,
-  casos de uso e os **contratos dos mecanismos de análise** (`AnalysisEngine`).
-- **:data** implementa os repositórios (Room para histórico, DataStore para preferências).
-- **Features** dependem só de `:domain`, `:core:designsystem` e `:core:ui`. Nunca de outra feature.
-- **:app** monta o grafo Hilt e a navegação.
 
 ## 2. Módulos
 
-| Módulo | Tipo | Responsabilidade | Estado |
-|---|---|---|---|
-| `:app` | Android app | `Application`, `MainActivity`, splash, NavHost | ✅ |
-| `:core:common` | Android lib | Dispatchers e escopo de aplicação injetáveis | ✅ |
-| `:core:database` | Android lib | Room: `AegisDatabase`, `ScanRecordDao`, entidade | ✅ |
-| `:core:designsystem` | Android lib | Tema, cores semânticas, tipografia, logo, componentes | ✅ |
-| `:core:ui` | Android lib | Apresentação de modelos de domínio (veredito, formato), formatadores | ✅ |
-| `:core:security` | Android lib | Registro dos mecanismos de análise (multibinding) | ✅ registro vazio |
-| `:core:network` | Android lib | OkHttp + cliente do backend AEGIS | Etapa 7 |
-| `:domain` | JVM lib | `model/`, `repository/`, `usecase/`, `analysis/` | ✅ |
-| `:data` | Android lib | `local/` (DataStore), `repository/` (Room), `mapper/` | ✅ (`remote/` na Etapa 7) |
-| `:feature:dashboard` | feature | Painel inicial | ✅ |
-| `:feature:scanner` | feature | Seleção de arquivos e informações de análise | ✅ informativo; SAF na Etapa 2 |
-| `:feature:history` | feature | Histórico com exclusão individual e limpeza | ✅ |
-| `:feature:settings` | feature | Tema, privacidade, limpeza de histórico, sobre | ✅ parcial (itens futuros marcados indisponíveis) |
-| `:feature:filedetails` | feature | Detalhes técnicos | Etapa 8 |
-| `:feature:reports` | feature | Resultado / relatório | Etapa 8 |
+| Módulo | Responsabilidade |
+|---|---|
+| `:app` | Hilt, splash, NavHost, manifesto, `network_security_config` |
+| `:domain` | Modelos (`AnalysisReport`, `Verdict`...), contratos (`AnalysisEngine`, `FormatIdentifier`, `RuleEngine`, `PatternScanner`, `FileStager`, `ReputationRepository`), `RiskClassifier`, casos de uso (`AnalyzeFileUseCase`...) |
+| `:core:security` | Identificação por assinatura, analisadores APK/ZIP/DEX/PE/ELF/PDF/EICAR, motor e conjuntos de regras, registro Hilt |
+| `:core:network` | `AegisBackendClient` (OkHttp, só HTTPS, limites de resposta, validação de contrato) |
+| `:core:database` | Room v2 (`report_json`), migração 1→2 |
+| `:data` | `SafFileStager`, `DataStoreUserPreferencesRepository`, `KeystoreTokenCipher`, `BackendReputationRepository`, `RoomScanHistoryRepository` |
+| `:core:designsystem` / `:core:ui` | Tema, componentes, apresentação de vereditos e severidades |
+| `:feature:*` | dashboard, scanner (seleção + Analisando), reports (Resultado + VirusTotal), filedetails, history, settings |
+| `backend/` | Node.js sem dependências: guarda a chave, autentica, limita e traduz a VirusTotal API v3 |
 
-Módulos só são criados quando passam a ter conteúdo real — nenhum módulo vazio "de fachada".
+## 3. Fluxo de análise
 
-Grafo de dependências:
+1. **Identificando arquivo** — metadados do provedor SAF e cabeçalho (8 KB) → formato real.
+2. **Calculando hash** — cópia para `cacheDir/scan` com SHA-256/SHA-1/MD5 em blocos; progresso por bytes lidos.
+3. **Inspecionando estrutura** — refinamento (ZIP→APK/JAR, PE→DLL) e cada `AnalysisEngine` aplicável.
+4. **Verificando indicadores locais** — `RuleEngine` sobre os fatos extraídos.
+5. **Reputação online** — marcada como não autorizada; oferecida depois no Resultado, com consentimento.
+6. **Finalizando relatório** — classificação, gravação no histórico, cópia temporária apagada.
 
-```
-:app ─▶ :feature:* ─▶ :core:ui ─▶ :core:designsystem
-  │          └──────▶ :domain ◀── :core:ui
-  ├──▶ :data ─▶ :core:database, :core:common, :domain
-  └──▶ :core:security ─▶ :domain
-```
+O fluxo é cancelável (cancelamento cooperativo); cancelado, nada é salvo e a cópia é removida.
 
-## 3. Mecanismos de análise extensíveis
+## 4. Classificação (RiskClassifier)
 
-`AnalysisEngine` (em `:domain`) é o contrato único:
+| Situação | Veredito |
+|---|---|
+| Assinatura verificável (EICAR) | Ameaça detectada |
+| Indicador de severidade alta/crítica | Suspeito |
+| Arquivo vazio, formato sem inspeção estrutural, mecanismo com falha ou **inspeção parcial** | Inconclusivo |
+| Arquivo ilegível ou erro de leitura | Erro na análise |
+| Inspeção completa sem indicadores elevados | Seguro segundo as verificações (sempre com o aviso de que não há garantia) |
+| VirusTotal: ≥ 3 mecanismos "malicious" | Ameaça detectada |
+| VirusTotal: 1–2 "malicious" ou qualquer "suspicious" | No mínimo Suspeito |
+| VirusTotal sem detecção, hash desconhecido ou falha | Mantém o resultado local |
 
-```kotlin
-interface AnalysisEngine {
-    val descriptor: EngineDescriptor          // id, nome, formatos suportados
-    suspend fun analyze(input: AnalysisInput): EngineResult  // Completed | Failed | NotApplicable
-}
-```
+Não há porcentagens; o limiar de 3 mecanismos independentes evita tratar falsos positivos isolados como ameaça.
 
-Cada mecanismo novo é registrado em `:core:security` com `@Binds @IntoSet`, sem tocar no resto
-do app. `GetScannerStatusUseCase` lê o conjunto real: **com zero mecanismos, o dashboard e o
-scanner informam que a análise está indisponível**, em vez de simular qualquer resultado.
+## 5. Privacidade e segurança
 
-`Finding` já traz os campos exigidos para o motor de regras (Etapa 6): identificador, descrição,
-categoria, severidade, evidência e justificativa técnica.
+- Análise local como padrão; nenhuma execução; nenhuma exclusão ou modificação de arquivos.
+- Consentimento para compartilhar o hash; **confirmação separada com caixa de reconhecimento** para upload.
+- Upload exige o mesmo SHA-256 da análise (o arquivo é reverificado); o URI do SAF não é persistido.
+- Token do backend cifrado com AES-256-GCM (Android Keystore); chave do VirusTotal só no servidor.
+- HTTPS obrigatório (interceptor + `cleartextTrafficPermitted=false`, apenas CAs do sistema).
+- Respostas validadas (tamanho máximo, esquema, hash correspondente, contagens não negativas).
+- Limites configuráveis: tamanho do arquivo, entradas, total descompactado, razão de compressão,
+  profundidade, conteúdo varrido; total de arquivos aninhados limitado a 100.
+- Dados fora de backups; histórico só com metadados e evidências.
 
-## 4. Decisões arquiteturais
+## 6. Testes
 
-1. **Convention plugins (`build-logic/`)**: SDKs, Java 17, Compose, Hilt e Room configurados
-   uma vez; cada módulo tem um `build.gradle.kts` de poucas linhas.
-2. **Version catalog** (`gradle/libs.versions.toml`): fonte única de versões.
-3. **Navegação tipada** (Navigation Compose 2.8 + kotlinx.serialization): rotas são objetos
-   `@Serializable` expostos pelas features via `NavGraphBuilder.xxxScreen()`.
-4. **Enums persistidos por nome**: valores ilegíveis vindos do banco viram `INCONCLUSIVE`
-   (veredito) ou `UNKNOWN` — **nunca** "seguro". Coberto por teste.
-5. **Erros de leitura não viram zero**: se o histórico falhar, o dashboard mostra erro em vez
-   de "0 ameaças".
-6. **Privacidade por construção nesta etapa**: a permissão `INTERNET` é removida explicitamente
-   do manifesto; `allowBackup=false` e `data_extraction_rules.xml` excluem os dados de backup em
-   nuvem e de transferência entre aparelhos. A tela de configurações afirma isso porque é verdade
-   no build.
-7. **Tema escuro padrão, cores dinâmicas desligadas** para preservar a identidade AEGIS.
-8. **Cores semânticas próprias** (`AegisStatusColors`): esmeralda (seguro segundo as verificações),
-   âmbar (suspeito), vermelho discreto (ameaça), ardósia (inconclusivo), lavanda (erro de análise),
-   violeta (informação). Cor nunca é o único portador de significado — sempre há texto.
-9. **R8 desligado no release** até a Etapa 10, onde será habilitado e validado com testes.
+| Módulo | Cobertura |
+|---|---|
+| `:domain` | Orquestração (arquivo inacessível, inexistente, vazio, muito grande, sem extensão, mecanismo que falha, cancelamento, ordem das etapas), classificador, dashboard |
+| `:core:security` | Identificação (extensão falsa, sem extensão, vazio), ZIP válido/malformado/suspeito/bomba/aninhado/limites, PE válido/W+X/entrada inválida/truncado, ELF, PDF (metadados, JS ofuscado, ObjStm), EICAR, APK (permissões, combinações, assinatura ausente, payloads) |
+| `:data` | Repositório de reputação: sem configuração, sem conexão, 429, 401/403, hash desconhecido, resposta inválida, upload de arquivo diferente, polling, upload cancelado; mapeamento do histórico |
+| `:core:database` (instrumentado) | DAO e migração 1→2 |
+| `backend/` | 13 testes com VirusTotal simulado |
 
-## 5. Dependências
+Todos os arquivos de teste são sintéticos e inofensivos; nenhum malware real é usado.
 
-| Biblioteca | Versão | Uso |
-|---|---|---|
-| Android Gradle Plugin | 8.7.3 | Build Android (compileSdk/targetSdk 35) |
-| Gradle (wrapper) | 8.11.1 | Exigido ≥ 8.9 pelo AGP 8.7 |
-| Kotlin + Compose compiler plugin | 2.1.0 | Linguagem e compilador Compose |
-| KSP | 2.1.0-1.0.29 | Processamento de anotações (Hilt, Room) |
-| Hilt (Dagger) | 2.54 | Injeção de dependências |
-| hilt-navigation-compose | 1.2.0 | `hiltViewModel()` |
-| Compose BOM | 2024.12.01 | UI, Material 3, ícones |
-| Navigation Compose | 2.8.5 | Navegação tipada |
-| Lifecycle | 2.8.7 | ViewModel, `collectAsStateWithLifecycle` |
-| Activity Compose | 1.9.3 | `setContent`, edge-to-edge |
-| Core KTX / SplashScreen | 1.15.0 / 1.0.1 | Utilidades, splash compatível com API 26+ |
-| Room | 2.6.1 | Histórico |
-| DataStore Preferences | 1.1.1 | Preferências |
-| Coroutines | 1.9.0 | Assincronia e Flow |
-| kotlinx.serialization | 1.7.3 | Rotas de navegação; JSON na Etapa 7 |
-| OkHttp | 4.12.0 | **Declarada, ainda não usada** (Etapa 7) |
-| WorkManager | 2.10.0 | **Declarada, ainda não usada** (Etapa 7) |
-| JUnit 4 / AndroidX Test | 4.13.2 / 1.6.x | Testes |
+## 7. Dependências
 
-Todas são mantidas por Google, JetBrains ou Square. Para subir `targetSdk` além de 35, atualize o
-AGP com o Upgrade Assistant do Android Studio e ajuste `AegisBuildConfig`.
-
-## 6. Design system
-
-- **Cores**: grafite `#0B0D10`, carvão `#12151A…#2A313C`, violeta `#8B7CFF`, azul elétrico `#4DA3FF`.
-- **Formas**: cantos de 6 a 24dp (cards 16dp).
-- **Tipografia**: sans-serif do sistema com pesos ajustados; `AegisMonospace` para hashes.
-- **Componentes**: `AegisLogo`, `AegisWordmark`, `AegisCard`, `AegisPrimaryButton` (gradiente),
-  `StatusBadge`, `StatusOrb` (pulsa só quando há mecanismos ativos), `AegisTopBar`,
-  `SectionHeader`, `EmptyState`.
-- **Ícone e splash**: vetor original (escudo com monograma "A"), adaptativo e monocromático.
-
-## 7. Testes da Etapa 1
-
-| Teste | Tipo | Verifica |
-|---|---|---|
-| `ObserveDashboardSummaryUseCaseTest` | unitário | Resumo vazio sem dados inventados; contagem só de ameaças confirmadas; ordem; limite |
-| `GetScannerStatusUseCaseTest` | unitário | Zero mecanismos ⇒ não operacional; formatos; ids duplicados rejeitados |
-| `ScanRecordMapperTest` | unitário | Ida e volta; veredito corrompido **nunca** vira seguro |
-| `AegisFormattersTest` | unitário | Tamanhos binários, hash abreviado |
-| `ScanRecordDaoTest` | instrumentado | Ordenação, limite, contagem por veredito, exclusão |
+AGP 8.7.3 · Gradle 8.11.1 · Kotlin 2.1.0 · KSP 2.1.0-1.0.29 · Hilt 2.54 · Compose BOM 2024.12.01 ·
+Navigation 2.8.5 · Lifecycle 2.8.7 · Room 2.6.1 · DataStore 1.1.1 · OkHttp 4.12.0 ·
+kotlinx.serialization 1.7.3 · Coroutines 1.9.0. compileSdk/targetSdk 35, minSdk 26.
+Todas mantidas por Google, JetBrains ou Square. YARA: interface `PatternScanner` preparada, sem
+implementação registrada — a UI mostra "não integrado".
