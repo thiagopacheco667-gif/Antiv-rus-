@@ -1,6 +1,8 @@
 package com.aegis.security.core.security.rules
 
 import com.aegis.security.core.security.zip.ZipFacts
+import com.aegis.security.domain.analysis.CommonFacts
+import com.aegis.security.domain.model.FileFormat
 import com.aegis.security.domain.analysis.FindingCategory
 import com.aegis.security.domain.analysis.Severity
 import javax.inject.Inject
@@ -25,7 +27,12 @@ class ArchiveRules @Inject constructor() : RuleSet {
             "AEGIS-ZIP-003", "Executáveis dentro do arquivo compactado", FindingCategory.ARCHIVE, Severity.MEDIUM,
             "Arquivos compactados são um meio comum de distribuir executáveis e scripts. A presença não indica " +
                 "malware por si só, mas o conteúdo deve ser verificado antes de ser aberto.",
-        ) { bag -> zip(bag)?.let { hitsFrom(it.executableEntries) }.orEmpty() },
+        ) { bag ->
+            val isApk = bag.get<CommonFacts>()?.format == FileFormat.APK
+            // Em APKs, classes*.dex na raiz e lib/<abi>/*.so são a estrutura normal do app, não um indicador.
+            val entries = zip(bag)?.executableEntries.orEmpty().filterNot { isApk && (APK_DEX.matches(it) || APK_NATIVE.matches(it)) }
+            hitsFrom(entries)
+        },
 
         LocalRule(
             "AEGIS-ZIP-004", "Entrada com extensão dupla", FindingCategory.ARCHIVE, Severity.HIGH,
@@ -64,4 +71,9 @@ class ArchiveRules @Inject constructor() : RuleSet {
             "Bytes antes do primeiro registro ZIP indicam arquivo autoextraível ou poliglota (válido em dois formatos).",
         ) { bag -> zip(bag)?.let { if (it.prependedBytes > 0) listOf(RuleHit("${it.prependedBytes} bytes antes do primeiro registro")) else emptyList() }.orEmpty() },
     )
+
+    private companion object {
+        val APK_DEX = Regex("^classes\\d*\\.dex$")
+        val APK_NATIVE = Regex("^lib/[^/]+/[^/]+\\.so$")
+    }
 }

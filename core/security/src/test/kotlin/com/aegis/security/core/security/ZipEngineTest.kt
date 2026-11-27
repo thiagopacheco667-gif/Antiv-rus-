@@ -113,4 +113,12 @@ class ZipEngineTest {
         val result = engine.analyze(TestFiles.input(file, FileFormat.ZIP, AnalysisLimits(maxArchiveEntries = 10))) as EngineResult.Completed
         assertTrue(result.incomplete.isNotEmpty())
     }
+
+    @Test
+    fun standardApkCode_isNotFlaggedAsEmbeddedExecutable() = runTest {
+        val facts = facts(TestFiles.zip(listOf(ZipSpec("classes.dex", ByteArray(8)), ZipSpec("lib/arm64-v8a/libmain.so", ByteArray(8)), ZipSpec("assets/extra.exe", ByteArray(8)))))
+        val common = com.aegis.security.domain.analysis.CommonFacts("jogo.apk", "apk", FileFormat.APK, 100)
+        val finding = rules.evaluate(listOf(facts, common)).single { it.ruleId == "AEGIS-ZIP-003" }
+        assertEquals("assets/extra.exe", finding.evidence)
+    }
 }
