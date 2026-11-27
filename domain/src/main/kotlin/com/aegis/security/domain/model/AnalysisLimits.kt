@@ -5,9 +5,9 @@ import kotlinx.serialization.Serializable
 /** Limites configuráveis que protegem o aparelho contra arquivos maliciosos ou gigantes. */
 @Serializable
 data class AnalysisLimits(
-    val maxFileSizeMb: Int = 512,
+    val maxFileSizeMb: Int = 2_048,
     val maxArchiveEntries: Int = 10_000,
-    val maxTotalUncompressedMb: Int = 2_048,
+    val maxTotalUncompressedMb: Int = 4_096,
     val maxCompressionRatio: Int = 100,
     val maxNestingDepth: Int = 3,
     val maxContentScanMb: Int = 64,
@@ -29,7 +29,7 @@ data class AnalysisLimits(
         const val MB = 1024L * 1024L
         val FileSizeOptionsMb = listOf(64, 128, 256, 512, 1024, 2048)
         val ArchiveEntryOptions = listOf(1_000, 5_000, 10_000, 50_000)
-        val TotalUncompressedOptionsMb = listOf(256, 512, 1024, 2048, 4096)
+        val TotalUncompressedOptionsMb = listOf(256, 512, 1024, 2048, 4096, 8192)
         val CompressionRatioOptions = listOf(20, 50, 100, 200, 500)
         val NestingDepthOptions = listOf(0, 1, 2, 3, 5)
         val ContentScanOptionsMb = listOf(16, 32, 64, 128, 256)
