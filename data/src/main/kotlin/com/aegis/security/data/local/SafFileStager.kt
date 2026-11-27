@@ -115,6 +115,12 @@ internal class SafFileStager @Inject constructor(
         staged.file.delete()
     }
 
+    override fun newWorkDir(): File = File(scanDir, "parts-${UUID.randomUUID()}").apply { mkdirs() }
+
+    override fun deleteWorkDir(dir: File) {
+        if (dir.parentFile == scanDir) dir.deleteRecursively()
+    }
+
     override fun open(uri: String): InputStream = guard {
         resolver.openInputStream(Uri.parse(uri)) ?: throw FileAccessException("o provedor não abriu o arquivo")
     }
@@ -122,7 +128,7 @@ internal class SafFileStager @Inject constructor(
     /** Remove cópias de análises interrompidas (ex.: processo encerrado). */
     private fun cleanupStale() {
         val cutoff = System.currentTimeMillis() - STALE_AFTER_MILLIS
-        scanDir.listFiles()?.filter { it.lastModified() < cutoff }?.forEach { it.delete() }
+        scanDir.listFiles()?.filter { it.lastModified() < cutoff }?.forEach { it.deleteRecursively() }
     }
 
     private inline fun <T> guard(block: () -> T): T = try {

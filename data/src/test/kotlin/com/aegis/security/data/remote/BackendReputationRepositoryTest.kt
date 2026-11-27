@@ -10,6 +10,7 @@ import com.aegis.security.core.network.StatsDto
 import com.aegis.security.core.network.UploadDto
 import com.aegis.security.domain.model.AnalysisLimits
 import com.aegis.security.domain.model.FileMetadata
+import com.aegis.security.domain.model.OnlineMode
 import com.aegis.security.domain.model.OnlineReputation
 import com.aegis.security.domain.model.OnlineServiceConfig
 import com.aegis.security.domain.model.ReputationFailure
@@ -53,12 +54,14 @@ class BackendReputationRepositoryTest {
     private class Prefs(configured: Boolean) : UserPreferencesRepository {
         override val themePreference = MutableStateFlow(ThemePreference.DARK)
         override val analysisLimits = MutableStateFlow(AnalysisLimits())
-        override val onlineServiceConfig = MutableStateFlow(if (configured) OnlineServiceConfig("https://aegis.test", true) else OnlineServiceConfig.Empty)
+        override val onlineServiceConfig = MutableStateFlow(
+            if (configured) OnlineServiceConfig(OnlineMode.BACKEND, "https://aegis.test", hasBackendToken = true, hasApiKey = false) else OnlineServiceConfig.Empty,
+        )
         private val token = if (configured) "token" else null
         override suspend fun setThemePreference(preference: ThemePreference) = Unit
         override suspend fun setAnalysisLimits(limits: AnalysisLimits) = Unit
-        override suspend fun setOnlineServiceConfig(baseUrl: String, accessToken: String?) = Unit
-        override suspend fun accessToken() = token
+        override suspend fun setOnlineServiceConfig(mode: OnlineMode, baseUrl: String, credential: String?) = Unit
+        override suspend fun credential(mode: OnlineMode) = token
     }
 
     private inner class Stager(private val bytes: ByteArray = content) : FileStager {
@@ -66,6 +69,8 @@ class BackendReputationRepositoryTest {
         override suspend fun readHeader(uri: String, maxBytes: Int) = ByteArray(0)
         override suspend fun stage(uri: String, maxBytes: Long, onProgress: suspend (Long) -> Unit): StagedFile = error("não usado")
         override fun release(staged: StagedFile) = Unit
+        override fun newWorkDir() = java.io.File(System.getProperty("java.io.tmpdir"))
+        override fun deleteWorkDir(dir: java.io.File) = Unit
         override fun open(uri: String): InputStream = ByteArrayInputStream(bytes)
     }
 
@@ -77,7 +82,7 @@ class BackendReputationRepositoryTest {
     private val clock = object : Clock { override fun now() = 42L }
 
     private fun repository(api: BackendApi, configured: Boolean = true, stager: FileStager = Stager(), sleeper: Sleeper = NoSleep()) =
-        BackendReputationRepository(api, Prefs(configured), stager, Dispatchers.Unconfined, clock, sleeper)
+        BackendReputationRepository({ api }, Prefs(configured), stager, Dispatchers.Unconfined, clock, sleeper)
 
     @Test
     fun notConfigured_isFailure_neverSafe() = runTest {

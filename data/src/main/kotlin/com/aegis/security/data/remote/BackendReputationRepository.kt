@@ -2,11 +2,14 @@ package com.aegis.security.data.remote
 
 import com.aegis.security.core.common.dispatchers.AegisDispatchers
 import com.aegis.security.core.common.dispatchers.Dispatcher
+import com.aegis.security.core.network.AegisBackendClient
 import com.aegis.security.core.network.BackendApi
 import com.aegis.security.core.network.BackendHttpException
 import com.aegis.security.core.network.DetectionDto
 import com.aegis.security.core.network.InvalidBackendResponseException
 import com.aegis.security.core.network.StatsDto
+import com.aegis.security.core.network.VirusTotalDirectClient
+import com.aegis.security.domain.model.OnlineMode
 import com.aegis.security.domain.model.BackendStatus
 import com.aegis.security.domain.model.DetectionStats
 import com.aegis.security.domain.model.EngineDetection
@@ -22,6 +25,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.io.IOException
 import java.io.InterruptedIOException
 import java.security.MessageDigest
@@ -30,8 +34,25 @@ import javax.inject.Inject
 /** Erro já classificado, usado internamente pelas retentativas. */
 internal class ClassifiedFailure(val kind: ReputationFailure, override val message: String) : Exception(message)
 
+/** Escolhe o cliente conforme o modo configurado (chave pessoal ou servidor AEGIS). */
+fun interface ReputationApis {
+    fun of(mode: OnlineMode): BackendApi
+}
+
+internal class DefaultReputationApis @Inject constructor(
+    private val backend: AegisBackendClient,
+    private val direct: VirusTotalDirectClient,
+) : ReputationApis {
+    override fun of(mode: OnlineMode): BackendApi = when (mode) {
+        OnlineMode.DIRECT -> direct
+        OnlineMode.BACKEND -> backend
+    }
+}
+
+internal data class Credentials(val api: BackendApi, val url: String, val token: String)
+
 internal class BackendReputationRepository @Inject constructor(
-    private val api: BackendApi,
+    private val apis: ReputationApis,
     private val preferences: UserPreferencesRepository,
     private val stager: FileStager,
     @Dispatcher(AegisDispatchers.IO) private val io: CoroutineDispatcher,
@@ -41,7 +62,7 @@ internal class BackendReputationRepository @Inject constructor(
 
     override suspend fun status(): Result<BackendStatus> = withContext(io) {
         try {
-            val (url, token) = credentials()
+            val (api, url, token) = credentials()
             val health = retrying { api.health(url, token) }
             Result.success(BackendStatus(health.mode, health.uploadsEnabled, health.dailyQuotaRemaining))
         } catch (failure: ClassifiedFailure) {
@@ -51,7 +72,7 @@ internal class BackendReputationRepository @Inject constructor(
 
     override suspend fun lookup(sha256: String): OnlineReputation = withContext(io) {
         try {
-            val (url, token) = credentials()
+            val (api, url, token) = credentials()
             val report = retrying { api.fileReport(url, token, sha256) }
             if (report.status == "not_found") {
                 OnlineReputation.NotFound(clock.now())
@@ -77,11 +98,29 @@ internal class BackendReputationRepository @Inject constructor(
         onProgress: (Float) -> Unit,
     ): UploadOutcome = withContext(io) {
         try {
-            val (url, token) = credentials()
+            val (api, url, token) = credentials()
             val size = verifyFile(uri, expectedSha256)
             if (size > MAX_UPLOAD_BYTES) throw ClassifiedFailure(ReputationFailure.FILE_TOO_LARGE, "o VirusTotal aceita arquivos de até 650 MB")
             // Upload não é repetido automaticamente para evitar envios duplicados.
             val result = classify { api.upload(url, token, fileName, size, { stager.open(uri) }, onProgress) }
+            UploadOutcome.Accepted(result.analysisId)
+        } catch (failure: ClassifiedFailure) {
+            UploadOutcome.Failed(failure.kind, failure.message)
+        }
+    }
+
+    override suspend fun uploadPart(
+        file: File,
+        name: String,
+        sha256: String,
+        onProgress: (Float) -> Unit,
+    ): UploadOutcome = withContext(io) {
+        try {
+            val (api, url, token) = credentials()
+            val size = file.length()
+            if (!file.exists() || size == 0L) throw ClassifiedFailure(ReputationFailure.FILE_UNAVAILABLE, "parte extraída não está mais disponível")
+            if (size > MAX_UPLOAD_BYTES) throw ClassifiedFailure(ReputationFailure.FILE_TOO_LARGE, "a parte excede 650 MB")
+            val result = classify { api.upload(url, token, name.substringAfterLast('/'), size, { file.inputStream() }, onProgress) }
             UploadOutcome.Accepted(result.analysisId)
         } catch (failure: ClassifiedFailure) {
             UploadOutcome.Failed(failure.kind, failure.message)
@@ -94,7 +133,7 @@ internal class BackendReputationRepository @Inject constructor(
         onStatus: (String) -> Unit,
     ): OnlineReputation = withContext(io) {
         try {
-            val (url, token) = credentials()
+            val (api, url, token) = credentials()
             repeat(MAX_POLLS) {
                 val analysis = retrying { api.analysis(url, token, analysisId) }
                 if (analysis.status == "completed") {
@@ -119,13 +158,14 @@ internal class BackendReputationRepository @Inject constructor(
         }
     }
 
-    private suspend fun credentials(): Pair<String, String> {
+    private suspend fun credentials(): Credentials {
         val config = preferences.onlineServiceConfig.first()
-        val token = preferences.accessToken()
-        if (config.baseUrl.isBlank() || token.isNullOrBlank()) {
+        val token = preferences.credential(config.mode)
+        if (!config.isConfigured || token.isNullOrBlank()) {
             throw ClassifiedFailure(ReputationFailure.NOT_CONFIGURED, "o serviço online não está configurado")
         }
-        return config.baseUrl to token
+        val url = if (config.mode == OnlineMode.DIRECT) VirusTotalDirectClient.BASE_URL else config.baseUrl
+        return Credentials(apis.of(config.mode), url, token)
     }
 
     /** Recalcula o SHA-256 antes do envio: garante que o arquivo é o mesmo analisado localmente. */

@@ -25,6 +25,12 @@
 
     <string name="feature_settings_section_online">Serviço online (VirusTotal)</string>
     <string name="feature_settings_online_intro">O AEGIS consulta o VirusTotal por meio do seu próprio servidor AEGIS (pasta backend/ do projeto). A chave da API fica somente no servidor; aqui você informa o endereço e o token de acesso dele.</string>
+    <string name="feature_settings_mode_direct">Direto, com minha chave do VirusTotal</string>
+    <string name="feature_settings_mode_backend">Servidor AEGIS próprio</string>
+    <string name="feature_settings_direct_intro">Crie uma conta gratuita em virustotal.com, abra o menu do seu perfil → API key e cole a chave aqui. Ela é cifrada com o Android Keystore e usada só para as consultas que você autorizar.</string>
+    <string name="feature_settings_api_key">Chave da API do VirusTotal</string>
+    <string name="feature_settings_api_key_keep">Nova chave (vazio mantém a atual)</string>
+    <string name="feature_settings_api_key_invalid">A chave do VirusTotal tem 64 caracteres (0-9 e a-f).</string>
     <string name="feature_settings_online_url">Endereço do servidor (HTTPS)</string>
     <string name="feature_settings_online_token">Token de acesso</string>
     <string name="feature_settings_online_token_keep">Novo token (vazio mantém o atual)</string>
@@ -33,20 +39,20 @@
     <string name="feature_settings_online_testing">Testando conexão…</string>
     <string name="feature_settings_online_ok">Conectado · API %1$s · envio de arquivos: %2$s · consultas restantes hoje: %3$s</string>
     <string name="feature_settings_online_fail">Falha: %1$s</string>
-    <string name="feature_settings_online_remove">Remover configuração e token</string>
+    <string name="feature_settings_online_remove">Remover credencial deste modo</string>
     <string name="feature_settings_online_saved">Configuração salva.</string>
     <string name="feature_settings_online_removed">Configuração removida.</string>
     <string name="feature_settings_online_invalid_url">O endereço precisa começar com https://</string>
-    <string name="feature_settings_online_terms">A API pública do VirusTotal é limitada (4 consultas/min, 500/dia) e não pode ser usada comercialmente. O modo é definido no servidor.</string>
+    <string name="feature_settings_online_terms">A API pública do VirusTotal é gratuita, limitada a 4 consultas por minuto e 500 por dia, e não pode ser usada comercialmente. O app respeita esse ritmo automaticamente.</string>
     <string name="feature_settings_yes">sim</string>
     <string name="feature_settings_no">não</string>
 
     <string name="feature_settings_section_privacy">Privacidade</string>
     <string name="feature_settings_privacy_local_default">A análise local é sempre o padrão e funciona sem internet.</string>
     <string name="feature_settings_privacy_consent">Nada é enviado a serviços externos sem sua confirmação; o envio do arquivo completo exige uma confirmação separada.</string>
-    <string name="feature_settings_privacy_internet">A internet é usada somente para consultas ao seu servidor AEGIS, sempre por HTTPS.</string>
+    <string name="feature_settings_privacy_internet">A internet é usada somente para consultas ao VirusTotal que você autorizar, sempre por HTTPS.</string>
     <string name="feature_settings_privacy_metadata_only">O histórico guarda apenas metadados e evidências, nunca cópias dos arquivos.</string>
-    <string name="feature_settings_privacy_token">O token de acesso é cifrado com uma chave do Android Keystore.</string>
+    <string name="feature_settings_privacy_token">A chave do VirusTotal e o token do servidor são cifrados com o Android Keystore.</string>
     <string name="feature_settings_privacy_no_backup">Os dados do app ficam fora de backups em nuvem e de transferências entre aparelhos.</string>
 
     <string name="feature_settings_section_data">Dados</string>

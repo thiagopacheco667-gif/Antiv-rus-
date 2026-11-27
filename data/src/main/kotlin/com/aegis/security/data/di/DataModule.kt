@@ -17,6 +17,8 @@ import com.aegis.security.data.local.TokenCipher
 import com.aegis.security.data.remote.BackendReputationRepository
 import com.aegis.security.data.remote.Clock
 import com.aegis.security.data.remote.CoroutineSleeper
+import com.aegis.security.data.remote.DefaultReputationApis
+import com.aegis.security.data.remote.ReputationApis
 import com.aegis.security.data.remote.Sleeper
 import com.aegis.security.data.remote.SystemClock
 import com.aegis.security.data.repository.RoomScanHistoryRepository
@@ -52,6 +54,9 @@ internal abstract class RepositoryModule {
 
     @Binds
     abstract fun bindsTokenCipher(impl: KeystoreTokenCipher): TokenCipher
+
+    @Binds
+    abstract fun bindsReputationApis(impl: DefaultReputationApis): ReputationApis
 
     @Binds
     abstract fun bindsClock(impl: SystemClock): Clock

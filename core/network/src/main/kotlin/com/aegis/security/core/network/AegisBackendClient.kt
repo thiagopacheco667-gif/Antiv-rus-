@@ -75,23 +75,7 @@ class AegisBackendClient @Inject constructor(
         open: () -> InputStream,
         onProgress: (Float) -> Unit,
     ): UploadDto {
-        val body = object : RequestBody() {
-            override fun contentType() = OCTET_STREAM
-            override fun contentLength() = sizeBytes
-            override fun writeTo(sink: BufferedSink) {
-                open().source().use { source ->
-                    var written = 0L
-                    while (true) {
-                        val read = source.read(sink.buffer, UPLOAD_CHUNK)
-                        if (read < 0) break
-                        written += read
-                        sink.emitCompleteSegments()
-                        onProgress((written.toDouble() / sizeBytes.coerceAtLeast(1)).toFloat().coerceIn(0f, 1f))
-                    }
-                    if (written != sizeBytes) throw IOException("o arquivo mudou durante o envio")
-                }
-            }
-        }
+        val body = streamingBody(sizeBytes, open, onProgress)
         val request = Request.Builder()
             .url(url(baseUrl, "v1", "files"))
             .header("Authorization", "Bearer $token")
@@ -128,7 +112,7 @@ class AegisBackendClient @Inject constructor(
     private suspend fun <T> execute(request: Request, serializer: KSerializer<T>, http: OkHttpClient = client): T {
         val response = http.newCall(request).await()
         response.use {
-            val text = readLimited(it)
+            val text = it.readLimited()
             if (!it.isSuccessful) {
                 val error = runCatching { json.decodeFromString(ErrorDto.serializer(), text) }.getOrNull()
                 throw BackendHttpException(
@@ -146,33 +130,53 @@ class AegisBackendClient @Inject constructor(
         }
     }
 
-    private fun readLimited(response: Response): String {
-        val body = response.body ?: return ""
-        val source = body.source()
-        if (!source.request(MAX_RESPONSE_BYTES + 1)) return source.buffer.readUtf8()
-        throw InvalidBackendResponseException("resposta maior que o limite permitido")
-    }
-
-    private suspend fun Call.await(): Response = suspendCancellableCoroutine { continuation ->
-        continuation.invokeOnCancellation { cancel() }
-        enqueue(
-            object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    if (continuation.isActive) continuation.resumeWithException(e)
-                }
-
-                override fun onResponse(call: Call, response: Response) {
-                    if (continuation.isActive) continuation.resume(response) else response.close()
-                }
-            },
-        )
-    }
-
     companion object {
         val SHA256 = Regex("^[0-9a-fA-F]{64}$")
         val ANALYSIS_ID = Regex("^[A-Za-z0-9=_\\-]{1,200}$")
-        private val OCTET_STREAM = "application/octet-stream".toMediaType()
-        private const val UPLOAD_CHUNK = 64L * 1024
-        private const val MAX_RESPONSE_BYTES = 2L * 1024 * 1024
     }
+}
+
+internal val OCTET_STREAM_TYPE = "application/octet-stream".toMediaType()
+
+/** Corpo enviado em blocos de 64 KB direto do arquivo, sem carregá-lo na memória. */
+internal fun streamingBody(sizeBytes: Long, open: () -> InputStream, onProgress: (Float) -> Unit): RequestBody =
+    object : RequestBody() {
+        override fun contentType() = OCTET_STREAM_TYPE
+        override fun contentLength() = sizeBytes
+        override fun writeTo(sink: BufferedSink) {
+            open().source().use { source ->
+                var written = 0L
+                while (true) {
+                    val read = source.read(sink.buffer, 64L * 1024)
+                    if (read < 0) break
+                    written += read
+                    sink.emitCompleteSegments()
+                    onProgress((written.toDouble() / sizeBytes.coerceAtLeast(1)).toFloat().coerceIn(0f, 1f))
+                }
+                if (written != sizeBytes) throw IOException("o arquivo mudou durante o envio")
+            }
+        }
+    }
+
+/** Executa a chamada de forma cancelável: cancelar a corrotina cancela a requisição HTTP. */
+internal suspend fun Call.await(): Response = suspendCancellableCoroutine { continuation ->
+    continuation.invokeOnCancellation { cancel() }
+    enqueue(
+        object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                if (continuation.isActive) continuation.resumeWithException(e)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (continuation.isActive) continuation.resume(response) else response.close()
+            }
+        },
+    )
+}
+
+/** Lê a resposta com limite de tamanho. */
+internal fun Response.readLimited(maxBytes: Long = 2L * 1024 * 1024): String {
+    val source = body?.source() ?: return ""
+    if (!source.request(maxBytes + 1)) return source.buffer.readUtf8()
+    throw InvalidBackendResponseException("resposta maior que o limite permitido")
 }

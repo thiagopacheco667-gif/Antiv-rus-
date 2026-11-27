@@ -3,6 +3,7 @@ package com.aegis.security.core.security.di
 import com.aegis.security.core.security.apk.AndroidApkManifestReader
 import com.aegis.security.core.security.apk.ApkEngine
 import com.aegis.security.core.security.apk.ApkManifestReader
+import com.aegis.security.core.security.apk.ApkPartExtractor
 import com.aegis.security.core.security.dex.DexEngine
 import com.aegis.security.core.security.elf.ElfEngine
 import com.aegis.security.core.security.identify.DefaultFormatIdentifier
@@ -18,6 +19,7 @@ import com.aegis.security.core.security.rules.RuleSet
 import com.aegis.security.core.security.signature.EicarEngine
 import com.aegis.security.core.security.zip.ZipEngine
 import com.aegis.security.domain.analysis.AnalysisEngine
+import com.aegis.security.domain.analysis.ExecutablePartExtractor
 import com.aegis.security.domain.analysis.FormatIdentifier
 import com.aegis.security.domain.analysis.PatternScanner
 import com.aegis.security.domain.analysis.RuleEngine
@@ -60,4 +62,5 @@ internal abstract class AnalysisEnginesModule {
     @Binds @Singleton abstract fun bindsRuleEngine(engine: DefaultRuleEngine): RuleEngine
     @Binds abstract fun bindsFormatIdentifier(identifier: DefaultFormatIdentifier): FormatIdentifier
     @Binds abstract fun bindsApkManifestReader(reader: AndroidApkManifestReader): ApkManifestReader
+    @Binds abstract fun bindsPartExtractor(extractor: ApkPartExtractor): ExecutablePartExtractor
 }

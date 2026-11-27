@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.aegis.security.data.mapper.toEnumOrNull
 import com.aegis.security.domain.model.AnalysisLimits
+import com.aegis.security.domain.model.OnlineMode
 import com.aegis.security.domain.model.OnlineServiceConfig
 import com.aegis.security.domain.model.ThemePreference
 import com.aegis.security.domain.repository.UserPreferencesRepository
@@ -51,7 +52,14 @@ internal class DataStoreUserPreferencesRepository @Inject constructor(
         .distinctUntilChanged()
 
     override val onlineServiceConfig: Flow<OnlineServiceConfig> = data
-        .map { OnlineServiceConfig(baseUrl = it[BACKEND_URL].orEmpty(), hasAccessToken = !it[BACKEND_TOKEN].isNullOrEmpty()) }
+        .map {
+            OnlineServiceConfig(
+                mode = it[ONLINE_MODE]?.toEnumOrNull<OnlineMode>() ?: OnlineMode.DIRECT,
+                baseUrl = it[BACKEND_URL].orEmpty(),
+                hasBackendToken = !it[BACKEND_TOKEN].isNullOrEmpty(),
+                hasApiKey = !it[VT_API_KEY].isNullOrEmpty(),
+            )
+        }
         .distinctUntilChanged()
 
     override suspend fun setThemePreference(preference: ThemePreference) {
@@ -69,19 +77,26 @@ internal class DataStoreUserPreferencesRepository @Inject constructor(
         }
     }
 
-    override suspend fun setOnlineServiceConfig(baseUrl: String, accessToken: String?) {
-        val encrypted = accessToken?.takeIf { it.isNotEmpty() }?.let(tokenCipher::encrypt)
+    override suspend fun setOnlineServiceConfig(mode: OnlineMode, baseUrl: String, credential: String?) {
+        val key = if (mode == OnlineMode.DIRECT) VT_API_KEY else BACKEND_TOKEN
+        val encrypted = credential?.takeIf { it.isNotEmpty() }?.let(tokenCipher::encrypt)
         dataStore.edit {
-            if (baseUrl.isEmpty()) it.remove(BACKEND_URL) else it[BACKEND_URL] = baseUrl
+            it[ONLINE_MODE] = mode.name
+            if (mode == OnlineMode.BACKEND) {
+                if (baseUrl.isEmpty()) it.remove(BACKEND_URL) else it[BACKEND_URL] = baseUrl
+            }
             when {
-                accessToken == null -> Unit
-                encrypted == null -> it.remove(BACKEND_TOKEN)
-                else -> it[BACKEND_TOKEN] = encrypted
+                credential == null -> Unit
+                encrypted == null -> it.remove(key)
+                else -> it[key] = encrypted
             }
         }
     }
 
-    override suspend fun accessToken(): String? = data.first()[BACKEND_TOKEN]?.let(tokenCipher::decrypt)
+    override suspend fun credential(mode: OnlineMode): String? {
+        val key = if (mode == OnlineMode.DIRECT) VT_API_KEY else BACKEND_TOKEN
+        return data.first()[key]?.let(tokenCipher::decrypt)
+    }
 
     private companion object {
         val THEME = stringPreferencesKey("theme_preference")
@@ -93,5 +108,7 @@ internal class DataStoreUserPreferencesRepository @Inject constructor(
         val MAX_SCAN_MB = intPreferencesKey("limit_max_scan_mb")
         val BACKEND_URL = stringPreferencesKey("backend_url")
         val BACKEND_TOKEN = stringPreferencesKey("backend_token_encrypted")
+        val VT_API_KEY = stringPreferencesKey("virustotal_api_key_encrypted")
+        val ONLINE_MODE = stringPreferencesKey("online_mode")
     }
 }

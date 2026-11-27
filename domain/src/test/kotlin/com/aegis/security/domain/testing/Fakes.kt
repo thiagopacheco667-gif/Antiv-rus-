@@ -14,6 +14,7 @@ import com.aegis.security.domain.model.AnalysisLimits
 import com.aegis.security.domain.model.FileFormat
 import com.aegis.security.domain.model.FileHashes
 import com.aegis.security.domain.model.FileMetadata
+import com.aegis.security.domain.model.OnlineMode
 import com.aegis.security.domain.model.OnlineServiceConfig
 import com.aegis.security.domain.model.ThemePreference
 import com.aegis.security.domain.repository.FileAccessException
@@ -56,6 +57,12 @@ class FakeFileStager(private val workDir: File) : FileStager {
     }
 
     override fun open(uri: String): InputStream = File(uri).inputStream()
+
+    override fun newWorkDir(): File = File.createTempFile("parts", "", workDir).apply { delete(); mkdirs() }
+
+    override fun deleteWorkDir(dir: File) {
+        dir.deleteRecursively()
+    }
 }
 
 class FakeIdentifier(private val format: FileFormat) : FormatIdentifier {
@@ -89,6 +96,6 @@ class FakePreferences(limits: AnalysisLimits = AnalysisLimits()) : UserPreferenc
     override val onlineServiceConfig: Flow<OnlineServiceConfig> = MutableStateFlow(OnlineServiceConfig.Empty)
     override suspend fun setThemePreference(preference: ThemePreference) = Unit
     override suspend fun setAnalysisLimits(limits: AnalysisLimits) { analysisLimits.value = limits }
-    override suspend fun setOnlineServiceConfig(baseUrl: String, accessToken: String?) = Unit
-    override suspend fun accessToken(): String? = null
+    override suspend fun setOnlineServiceConfig(mode: OnlineMode, baseUrl: String, credential: String?) = Unit
+    override suspend fun credential(mode: OnlineMode): String? = null
 }

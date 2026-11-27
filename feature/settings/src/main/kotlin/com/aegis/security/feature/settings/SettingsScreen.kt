@@ -68,6 +68,7 @@ import com.aegis.security.core.designsystem.component.StatusBadge
 import com.aegis.security.core.designsystem.theme.AegisTheme
 import com.aegis.security.core.designsystem.theme.StatusTone
 import com.aegis.security.domain.model.AnalysisLimits
+import com.aegis.security.domain.model.OnlineMode
 import com.aegis.security.domain.model.OnlineServiceConfig
 import com.aegis.security.domain.model.ThemePreference
 
@@ -88,6 +89,7 @@ internal fun SettingsRoute(
         SettingsMessage.OnlineSaved to stringResource(R.string.feature_settings_online_saved),
         SettingsMessage.OnlineRemoved to stringResource(R.string.feature_settings_online_removed),
         SettingsMessage.InvalidUrl to stringResource(R.string.feature_settings_online_invalid_url),
+        SettingsMessage.InvalidApiKey to stringResource(R.string.feature_settings_api_key_invalid),
     )
     LaunchedEffect(message) {
         val current = message ?: return@LaunchedEffect
@@ -150,8 +152,8 @@ private fun SettingsContent(
     yaraIntegrated: Boolean,
     onThemeSelected: (ThemePreference) -> Unit,
     onLimitsChanged: (AnalysisLimits) -> Unit,
-    onSaveOnline: (String, String) -> Unit,
-    onRemoveOnline: () -> Unit,
+    onSaveOnline: (OnlineMode, String, String) -> Unit,
+    onRemoveOnline: (OnlineMode) -> Unit,
     onTestConnection: () -> Unit,
     onRequestClearHistory: () -> Unit,
 ) {
@@ -282,38 +284,72 @@ private fun LimitStepper(label: String, value: Int, options: List<Int>, unit: St
 private fun OnlineEditor(
     config: OnlineServiceConfig,
     connection: ConnectionTest,
-    onSave: (String, String) -> Unit,
-    onRemove: () -> Unit,
+    onSave: (OnlineMode, String, String) -> Unit,
+    onRemove: (OnlineMode) -> Unit,
     onTest: () -> Unit,
 ) {
+    var mode by rememberSaveable(config.mode) { mutableStateOf(config.mode) }
     var url by rememberSaveable(config.baseUrl) { mutableStateOf(config.baseUrl) }
-    var token by remember { mutableStateOf("") }
+    var secret by remember { mutableStateOf("") }
+    val hasSecret = if (mode == OnlineMode.DIRECT) config.hasApiKey else config.hasBackendToken
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(stringResource(R.string.feature_settings_online_intro), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        OutlinedTextField(
-            value = url,
-            onValueChange = { url = it.trim() },
-            label = { Text(stringResource(R.string.feature_settings_online_url)) },
-            placeholder = { Text("https://aegis.exemplo.com") },
-            singleLine = true,
-            isError = url.isNotBlank() && !OnlineServiceConfig.isValidBaseUrl(url),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-            modifier = Modifier.fillMaxWidth(),
+        Column(Modifier.selectableGroup()) {
+            listOf(
+                OnlineMode.DIRECT to R.string.feature_settings_mode_direct,
+                OnlineMode.BACKEND to R.string.feature_settings_mode_backend,
+            ).forEach { (option, label) ->
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                        .selectable(selected = mode == option, onClick = { mode = option; secret = "" }, role = Role.RadioButton),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(selected = mode == option, onClick = null)
+                    Spacer(Modifier.size(12.dp))
+                    Text(stringResource(label), style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+        Text(
+            stringResource(if (mode == OnlineMode.DIRECT) R.string.feature_settings_direct_intro else R.string.feature_settings_online_intro),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        if (mode == OnlineMode.BACKEND) {
+            OutlinedTextField(
+                value = url,
+                onValueChange = { url = it.trim() },
+                label = { Text(stringResource(R.string.feature_settings_online_url)) },
+                placeholder = { Text("https://aegis.exemplo.com") },
+                singleLine = true,
+                isError = url.isNotBlank() && !OnlineServiceConfig.isValidBaseUrl(url),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        val secretLabel = when {
+            mode == OnlineMode.DIRECT && hasSecret -> R.string.feature_settings_api_key_keep
+            mode == OnlineMode.DIRECT -> R.string.feature_settings_api_key
+            hasSecret -> R.string.feature_settings_online_token_keep
+            else -> R.string.feature_settings_online_token
+        }
         OutlinedTextField(
-            value = token,
-            onValueChange = { token = it.trim() },
-            label = { Text(stringResource(if (config.hasAccessToken) R.string.feature_settings_online_token_keep else R.string.feature_settings_online_token)) },
+            value = secret,
+            onValueChange = { secret = it.trim() },
+            label = { Text(stringResource(secretLabel)) },
             singleLine = true,
+            isError = mode == OnlineMode.DIRECT && secret.isNotBlank() && !OnlineServiceConfig.isValidApiKey(secret),
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             modifier = Modifier.fillMaxWidth(),
         )
+        val activeAndConfigured = config.mode == mode && config.isConfigured
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = { onSave(url, token); token = "" }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
+            OutlinedButton(onClick = { onSave(mode, url, secret); secret = "" }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
                 Text(stringResource(R.string.feature_settings_online_save))
             }
-            OutlinedButton(onClick = onTest, enabled = config.isConfigured && connection != ConnectionTest.Running, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
+            OutlinedButton(onClick = onTest, enabled = activeAndConfigured && connection != ConnectionTest.Running, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
                 Icon(Icons.Outlined.Search, contentDescription = null)
                 Spacer(Modifier.size(6.dp))
                 Text(stringResource(R.string.feature_settings_online_test))
@@ -338,8 +374,8 @@ private fun OnlineEditor(
                 color = AegisTheme.statusColors.error.content,
             )
         }
-        if (config.baseUrl.isNotBlank() || config.hasAccessToken) {
-            TextButton(onClick = onRemove) { Text(stringResource(R.string.feature_settings_online_remove), color = MaterialTheme.colorScheme.error) }
+        if (hasSecret || (mode == OnlineMode.BACKEND && config.baseUrl.isNotBlank())) {
+            TextButton(onClick = { onRemove(mode) }) { Text(stringResource(R.string.feature_settings_online_remove), color = MaterialTheme.colorScheme.error) }
         }
         Text(stringResource(R.string.feature_settings_online_terms), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }

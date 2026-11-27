@@ -3,6 +3,7 @@ package com.aegis.security.domain.analysis
 import com.aegis.security.domain.model.EngineOutcome
 import com.aegis.security.domain.model.EngineStatus
 import com.aegis.security.domain.model.OnlineReputation
+import com.aegis.security.domain.model.PartReputation
 import com.aegis.security.domain.model.Verdict
 
 data class Classification(val verdict: Verdict, val reasons: List<String>)
@@ -119,6 +120,30 @@ object RiskClassifier {
                     reasons = local.reasons + summary + "Ausência de detecções externas não garante segurança.",
                 )
             }
+        }
+    }
+
+    /** Incorpora a reputação das partes executáveis de um APK. Partes desconhecidas não melhoram o resultado. */
+    fun combineParts(current: Classification, parts: List<PartReputation>): Classification {
+        if (parts.isEmpty()) return current
+        val found = parts.mapNotNull { (it.online as? OnlineReputation.Found)?.let { f -> it to f } }
+        val unknown = parts.count { it.online is OnlineReputation.NotFound }
+        val failed = parts.count { it.online is OnlineReputation.Failed }
+        val reasons = current.reasons.toMutableList()
+        reasons += "Partes executáveis consultadas: ${parts.size} (${found.size} conhecidas pelo VirusTotal, $unknown desconhecidas, $failed com falha)."
+        if (unknown > 0) reasons += "Partes desconhecidas pelo VirusTotal não indicam que sejam seguras."
+        val threat = found.filter { it.second.stats.malicious >= EXTERNAL_THREAT_MIN_ENGINES }
+        val flagged = found.filter { it.second.stats.malicious > 0 || it.second.stats.suspicious > 0 }
+        return when {
+            threat.isNotEmpty() -> Classification(
+                Verdict.THREAT_DETECTED,
+                reasons + "Ameaça em: " + threat.joinToString { "${it.first.name} (${it.second.stats.malicious} mecanismos)" } + ".",
+            )
+            flagged.isNotEmpty() -> Classification(
+                moreSevere(current.verdict, Verdict.SUSPICIOUS),
+                reasons + "Detecções em: " + flagged.joinToString { "${it.first.name} (${it.second.stats.malicious} maliciosa(s), ${it.second.stats.suspicious} suspeita(s))" } + ".",
+            )
+            else -> current.copy(reasons = reasons)
         }
     }
 

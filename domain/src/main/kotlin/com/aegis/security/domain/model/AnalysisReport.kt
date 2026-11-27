@@ -114,8 +114,19 @@ data class AnalysisReport(
     val localVerdict: Verdict,
     val localExplanation: List<String>,
     val online: OnlineReputation = OnlineReputation.NotRequested,
+    /** Reputação das partes executáveis (DEX, bibliotecas nativas) de APKs grandes ou desconhecidos. */
+    val parts: List<PartReputation> = emptyList(),
     val verdict: Verdict,
     val explanation: List<String>,
     /** Falha técnica que impediu a análise (quando houver). */
     val failure: String? = null,
+)
+
+/** Resultado online de uma parte executável extraída de um APK (apenas metadados). */
+@Serializable
+data class PartReputation(
+    val name: String,
+    val sizeBytes: Long,
+    val sha256: String,
+    val online: OnlineReputation,
 )

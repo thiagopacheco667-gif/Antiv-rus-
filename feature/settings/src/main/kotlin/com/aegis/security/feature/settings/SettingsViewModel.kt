@@ -6,6 +6,7 @@ import com.aegis.security.domain.analysis.PatternScanner
 import com.aegis.security.domain.analysis.RuleEngine
 import com.aegis.security.domain.model.AnalysisLimits
 import com.aegis.security.domain.model.BackendStatus
+import com.aegis.security.domain.model.OnlineMode
 import com.aegis.security.domain.model.OnlineServiceConfig
 import com.aegis.security.domain.model.ThemePreference
 import com.aegis.security.domain.usecase.CheckBackendStatusUseCase
@@ -83,23 +84,27 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { runOperation { setAnalysisLimits(limits) } }
     }
 
-    /** [token] vazio mantém o token atual; use [removeOnlineConfig] para apagá-lo. */
-    fun saveOnlineConfig(url: String, token: String) {
-        if (url.isNotBlank() && !OnlineServiceConfig.isValidBaseUrl(url)) {
+    /** [credential] vazio mantém a credencial atual do modo; use [removeOnlineConfig] para apagá-la. */
+    fun saveOnlineConfig(mode: OnlineMode, url: String, credential: String) {
+        if (mode == OnlineMode.BACKEND && url.isNotBlank() && !OnlineServiceConfig.isValidBaseUrl(url)) {
             _message.value = SettingsMessage.InvalidUrl
             return
         }
+        if (mode == OnlineMode.DIRECT && credential.isNotBlank() && !OnlineServiceConfig.isValidApiKey(credential)) {
+            _message.value = SettingsMessage.InvalidApiKey
+            return
+        }
         viewModelScope.launch {
-            if (runOperation { setOnlineConfig(url, token.ifBlank { null }) }) {
+            if (runOperation { setOnlineConfig(mode, url, credential.ifBlank { null }) }) {
                 _message.value = SettingsMessage.OnlineSaved
                 _connection.value = ConnectionTest.Idle
             }
         }
     }
 
-    fun removeOnlineConfig() {
+    fun removeOnlineConfig(mode: OnlineMode) {
         viewModelScope.launch {
-            if (runOperation { setOnlineConfig("", "") }) {
+            if (runOperation { setOnlineConfig(mode, "", "") }) {
                 _message.value = SettingsMessage.OnlineRemoved
                 _connection.value = ConnectionTest.Idle
             }
@@ -157,4 +162,4 @@ sealed interface SettingsUiState {
     ) : SettingsUiState
 }
 
-enum class SettingsMessage { HistoryCleared, OperationFailed, OnlineSaved, OnlineRemoved, InvalidUrl }
+enum class SettingsMessage { HistoryCleared, OperationFailed, OnlineSaved, OnlineRemoved, InvalidUrl, InvalidApiKey }

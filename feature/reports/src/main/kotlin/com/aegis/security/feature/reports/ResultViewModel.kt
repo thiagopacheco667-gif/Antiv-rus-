@@ -6,7 +6,12 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.aegis.security.domain.model.OnlineReputation
 import com.aegis.security.domain.model.ScanRecord
+import com.aegis.security.domain.usecase.DiscardPartsUseCase
+import com.aegis.security.domain.usecase.FileMismatchException
+import com.aegis.security.domain.usecase.InspectExecutablePartsUseCase
 import com.aegis.security.domain.usecase.LookupReputationUseCase
+import com.aegis.security.domain.usecase.PartsSession
+import com.aegis.security.domain.usecase.UploadUnknownPartsUseCase
 import com.aegis.security.domain.usecase.ObserveOnlineServiceConfigUseCase
 import com.aegis.security.domain.usecase.ObserveScanRecordUseCase
 import com.aegis.security.domain.usecase.UploadForAnalysisUseCase
@@ -40,7 +45,18 @@ sealed interface OnlineAction {
     data class Uploading(val progress: Float) : OnlineAction
     data class WaitingAnalysis(val status: String) : OnlineAction
     data class Error(val message: String) : OnlineAction
+    data object ConfirmParts : OnlineAction
+    data class PartsWorking(val message: PartsMessage) : OnlineAction
+    data object ConfirmPartsUpload : OnlineAction
+    data class PartsUploading(val index: Int, val total: Int, val part: String, val progress: Float) : OnlineAction
 }
+
+sealed interface PartsMessage {
+    data class Extracting(val part: String) : PartsMessage
+    data class Checking(val index: Int, val total: Int, val part: String) : PartsMessage
+}
+
+private enum class AfterSelection { UPLOAD, PARTS }
 
 @HiltViewModel
 class ResultViewModel @Inject constructor(
@@ -49,6 +65,9 @@ class ResultViewModel @Inject constructor(
     observeOnlineConfig: ObserveOnlineServiceConfigUseCase,
     private val lookupReputation: LookupReputationUseCase,
     private val uploadForAnalysis: UploadForAnalysisUseCase,
+    private val inspectParts: InspectExecutablePartsUseCase,
+    private val uploadUnknownParts: UploadUnknownPartsUseCase,
+    private val discardParts: DiscardPartsUseCase,
 ) : ViewModel() {
     private val route = savedStateHandle.toRoute<ResultDestination>()
     val recordId: Long = route.recordId
@@ -64,6 +83,11 @@ class ResultViewModel @Inject constructor(
     val action: StateFlow<OnlineAction> = _action.asStateFlow()
 
     private var job: Job? = null
+    private var afterSelection = AfterSelection.UPLOAD
+    private var partsSession: PartsSession? = null
+
+    private val _hasPartsSession = MutableStateFlow(false)
+    val hasPartsSession: StateFlow<Boolean> = _hasPartsSession.asStateFlow()
 
     fun requestLookup() {
         _action.value = OnlineAction.ConfirmLookup
@@ -80,7 +104,64 @@ class ResultViewModel @Inject constructor(
     }
 
     fun requestUpload() {
+        afterSelection = AfterSelection.UPLOAD
         _action.value = if (sourceUri == null) OnlineAction.NeedsFileSelection else OnlineAction.ConfirmUpload
+    }
+
+    fun requestParts() {
+        afterSelection = AfterSelection.PARTS
+        _action.value = if (sourceUri == null) OnlineAction.NeedsFileSelection else OnlineAction.ConfirmParts
+    }
+
+    /** Extrai o código do APK e consulta o hash de cada parte (consentimento já dado). */
+    fun confirmParts() {
+        val uri = sourceUri ?: return
+        _action.value = OnlineAction.PartsWorking(PartsMessage.Extracting(""))
+        job = viewModelScope.launch {
+            guarded {
+                releaseSession()
+                val session = inspectParts(recordId, uri) { progress ->
+                    _action.value = OnlineAction.PartsWorking(
+                        when (progress) {
+                            is InspectExecutablePartsUseCase.Progress.Extracting -> PartsMessage.Extracting(progress.part)
+                            is InspectExecutablePartsUseCase.Progress.Checking -> PartsMessage.Checking(progress.index, progress.total, progress.part)
+                        },
+                    )
+                }
+                partsSession = session
+                _hasPartsSession.value = true
+                _action.value = OnlineAction.Idle
+            }
+        }
+    }
+
+    fun requestPartsUpload() {
+        if (partsSession != null) _action.value = OnlineAction.ConfirmPartsUpload
+    }
+
+    fun confirmPartsUpload() {
+        val session = partsSession ?: return
+        _action.value = OnlineAction.PartsUploading(0, 0, "", 0f)
+        job = viewModelScope.launch {
+            guarded {
+                partsSession = null
+                _hasPartsSession.value = false
+                uploadUnknownParts(recordId, session, { index, total, part, fraction ->
+                    _action.value = OnlineAction.PartsUploading(index, total, part, fraction)
+                })
+                _action.value = OnlineAction.Idle
+            }
+        }
+    }
+
+    private fun releaseSession() {
+        partsSession?.let(discardParts::invoke)
+        partsSession = null
+        _hasPartsSession.value = false
+    }
+
+    override fun onCleared() {
+        releaseSession()
     }
 
     /** Arquivo selecionado novamente (ex.: ao abrir pelo histórico). O SHA-256 é conferido antes do envio. */
@@ -90,7 +171,7 @@ class ResultViewModel @Inject constructor(
             return
         }
         sourceUri = uri
-        _action.value = OnlineAction.ConfirmUpload
+        _action.value = if (afterSelection == AfterSelection.PARTS) OnlineAction.ConfirmParts else OnlineAction.ConfirmUpload
     }
 
     fun confirmUpload() {
@@ -116,7 +197,11 @@ class ResultViewModel @Inject constructor(
     }
 
     fun dismiss() {
-        if (_action.value !is OnlineAction.Uploading && _action.value !is OnlineAction.WaitingAnalysis && _action.value != OnlineAction.LookingUp) {
+        val busy = _action.value.let {
+            it is OnlineAction.Uploading || it is OnlineAction.WaitingAnalysis || it == OnlineAction.LookingUp ||
+                it is OnlineAction.PartsWorking || it is OnlineAction.PartsUploading
+        }
+        if (!busy) {
             _action.value = OnlineAction.Idle
         }
     }
@@ -127,7 +212,13 @@ class ResultViewModel @Inject constructor(
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (error: Exception) {
-            _action.value = OnlineAction.Error(error.message ?: "falha inesperada")
+            _action.value = OnlineAction.Error(
+                when (error) {
+                    is FileMismatchException -> error.message!!
+                    is java.io.IOException -> "não foi possível ler o arquivo: ${error.message}"
+                    else -> error.message ?: "falha inesperada"
+                },
+            )
         }
     }
 }

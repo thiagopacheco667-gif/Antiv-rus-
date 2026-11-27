@@ -2,6 +2,7 @@ package com.aegis.security.domain.usecase
 
 import com.aegis.security.domain.model.AnalysisLimits
 import com.aegis.security.domain.model.BackendStatus
+import com.aegis.security.domain.model.OnlineMode
 import com.aegis.security.domain.model.OnlineServiceConfig
 import com.aegis.security.domain.model.ThemePreference
 import com.aegis.security.domain.repository.ReputationRepository
@@ -42,10 +43,14 @@ class ObserveOnlineServiceConfigUseCase @Inject constructor(
 class SetOnlineServiceConfigUseCase @Inject constructor(
     private val repository: UserPreferencesRepository,
 ) {
-    suspend operator fun invoke(baseUrl: String, accessToken: String?) {
+    suspend operator fun invoke(mode: OnlineMode, baseUrl: String, credential: String?) {
         val trimmed = baseUrl.trim().trimEnd('/')
         require(trimmed.isEmpty() || OnlineServiceConfig.isValidBaseUrl(trimmed)) { "A URL deve usar HTTPS" }
-        repository.setOnlineServiceConfig(trimmed, accessToken?.trim())
+        val key = credential?.trim()
+        if (mode == OnlineMode.DIRECT && !key.isNullOrEmpty()) {
+            require(OnlineServiceConfig.isValidApiKey(key)) { "Chave do VirusTotal inválida (64 caracteres hexadecimais)" }
+        }
+        repository.setOnlineServiceConfig(mode, trimmed, key)
     }
 }
 

@@ -26,6 +26,14 @@ interface ReputationRepository {
         onProgress: (Float) -> Unit,
     ): UploadOutcome
 
+    /** Envia uma parte já extraída para o cache privado (o SHA-256 foi calculado na extração). */
+    suspend fun uploadPart(
+        file: java.io.File,
+        name: String,
+        sha256: String,
+        onProgress: (Float) -> Unit,
+    ): UploadOutcome
+
     suspend fun awaitAnalysis(
         analysisId: String,
         expectedSha256: String,

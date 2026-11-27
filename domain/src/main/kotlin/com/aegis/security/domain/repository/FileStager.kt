@@ -33,6 +33,11 @@ interface FileStager {
 
     fun release(staged: StagedFile)
 
+    /** Pasta temporária privada para extrações; apagada com [deleteWorkDir]. */
+    fun newWorkDir(): File
+
+    fun deleteWorkDir(dir: File)
+
     @Throws(FileAccessException::class)
     fun open(uri: String): InputStream
 }

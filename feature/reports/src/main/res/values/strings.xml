@@ -31,7 +31,7 @@
     <string name="feature_reports_online_not_requested">A reputação online não foi consultada. Nada foi compartilhado.</string>
     <string name="feature_reports_online_not_found">O VirusTotal não conhece este hash. Isso não indica que o arquivo é seguro.</string>
     <string name="feature_reports_online_failed">A consulta falhou: %1$s. O resultado considera apenas a análise local.</string>
-    <string name="feature_reports_online_not_configured">Configure o serviço online em Configurações para consultar o VirusTotal.</string>
+    <string name="feature_reports_online_not_configured">Informe sua chave gratuita do VirusTotal em Configurações → Serviço online para consultar.</string>
     <string name="feature_reports_vt_malicious">Detectaram ameaça</string>
     <string name="feature_reports_vt_suspicious">Consideraram suspeito</string>
     <string name="feature_reports_vt_clean">Não detectaram</string>
@@ -48,7 +48,7 @@
     <string name="feature_reports_cancel">Cancelar</string>
 
     <string name="feature_reports_lookup_dialog_title">Compartilhar o hash?</string>
-    <string name="feature_reports_lookup_dialog_message">O hash SHA-256 deste arquivo será enviado ao seu servidor AEGIS e ao VirusTotal. Hashes consultados podem ser registrados pelo serviço e ficar acessíveis a terceiros, como assinantes do VirusTotal. O conteúdo do arquivo não é enviado.</string>
+    <string name="feature_reports_lookup_dialog_message">O hash SHA-256 deste arquivo será enviado ao VirusTotal (diretamente ou pelo seu servidor AEGIS). Hashes consultados podem ser registrados pelo serviço e ficar acessíveis a terceiros, como assinantes do VirusTotal. O conteúdo do arquivo não é enviado.</string>
     <string name="feature_reports_lookup_dialog_confirm">Compartilhar hash</string>
 
     <string name="feature_reports_upload_dialog_title">Enviar o arquivo completo?</string>
@@ -62,4 +62,21 @@
     <string name="feature_reports_reselect_confirm">Selecionar</string>
 
     <string name="feature_reports_open_details">Detalhes técnicos</string>
+
+    <string name="feature_reports_too_large_upload">Arquivos acima de 650 MB não podem ser enviados ao VirusTotal. Em APKs, analise as partes executáveis.</string>
+    <string name="feature_reports_parts_button">Analisar partes executáveis do APK</string>
+    <string name="feature_reports_parts_upload_button">Enviar partes desconhecidas (%1$d)</string>
+    <string name="feature_reports_parts_title">Partes executáveis (%1$d)</string>
+    <string name="feature_reports_part_detected">%1$d detecção(ões)</string>
+    <string name="feature_reports_part_suspicious">%1$d suspeita(s)</string>
+    <string name="feature_reports_part_clean">0 detecções (%1$d mecanismos)</string>
+    <string name="feature_reports_part_unknown">Desconhecida</string>
+    <string name="feature_reports_part_failed">Falha: %1$s</string>
+    <string name="feature_reports_parts_extracting">Extraindo código do APK… %1$s</string>
+    <string name="feature_reports_parts_checking">Consultando parte %1$d de %2$d: %3$s</string>
+    <string name="feature_reports_parts_uploading">Enviando parte %1$d de %2$d: %3$s (%4$d%%)</string>
+    <string name="feature_reports_parts_dialog_title">Analisar as partes executáveis?</string>
+    <string name="feature_reports_parts_dialog_message">O AEGIS vai ler o APK, conferir que é o mesmo arquivo analisado e extrair para a área privada do app apenas o código (classes.dex, bibliotecas .so de uma arquitetura e código embutido). Só os hashes SHA-256 dessas partes serão compartilhados com o VirusTotal. Na API gratuita, cada consulta respeita o limite de 4 por minuto, então isso pode levar alguns minutos.</string>
+    <string name="feature_reports_parts_dialog_confirm">Compartilhar hashes das partes</string>
+    <string name="feature_reports_parts_upload_dialog_message">As partes desconhecidas (código do app) serão enviadas ao VirusTotal. Arquivos enviados passam a fazer parte do acervo do serviço e podem ser baixados por terceiros (parceiros e assinantes).</string>
 </resources>

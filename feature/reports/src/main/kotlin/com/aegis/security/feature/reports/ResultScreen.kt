@@ -84,6 +84,7 @@ internal fun ResultRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val action by viewModel.action.collectAsStateWithLifecycle()
+    val hasPartsSession by viewModel.hasPartsSession.collectAsStateWithLifecycle()
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         viewModel.onFileReselected(uri?.toString())
     }
@@ -95,14 +96,30 @@ internal fun ResultRoute(
         action = action,
         onNavigateBack = onNavigateBack,
         onOpenDetails = { onOpenDetails(viewModel.recordId) },
-        onRequestLookup = viewModel::requestLookup,
+        hasPartsSession = hasPartsSession,
+        callbacks = OnlineCallbacks(
+            lookup = viewModel::requestLookup,
+            upload = viewModel::requestUpload,
+            parts = viewModel::requestParts,
+            partsUpload = viewModel::requestPartsUpload,
+            cancel = viewModel::cancelOnline,
+        ),
         onConfirmLookup = viewModel::confirmLookup,
-        onRequestUpload = viewModel::requestUpload,
         onConfirmUpload = viewModel::confirmUpload,
-        onCancelOnline = viewModel::cancelOnline,
+        onConfirmParts = viewModel::confirmParts,
+        onConfirmPartsUpload = viewModel::confirmPartsUpload,
         onDismiss = viewModel::dismiss,
     )
 }
+
+/** Ações do cartão online; cada uma abre um pedido de consentimento antes de qualquer envio. */
+internal class OnlineCallbacks(
+    val lookup: () -> Unit,
+    val upload: () -> Unit,
+    val parts: () -> Unit,
+    val partsUpload: () -> Unit,
+    val cancel: () -> Unit,
+)
 
 @Composable
 internal fun ResultScreen(
@@ -110,11 +127,12 @@ internal fun ResultScreen(
     action: OnlineAction,
     onNavigateBack: () -> Unit,
     onOpenDetails: () -> Unit,
-    onRequestLookup: () -> Unit,
+    hasPartsSession: Boolean,
+    callbacks: OnlineCallbacks,
     onConfirmLookup: () -> Unit,
-    onRequestUpload: () -> Unit,
     onConfirmUpload: () -> Unit,
-    onCancelOnline: () -> Unit,
+    onConfirmParts: () -> Unit,
+    onConfirmPartsUpload: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     Scaffold(
@@ -140,7 +158,7 @@ internal fun ResultScreen(
                             modifier = Modifier.align(Alignment.Center),
                         )
                     } else {
-                        ResultContent(uiState.record, report, uiState.onlineConfigured, action, onOpenDetails, onRequestLookup, onRequestUpload, onCancelOnline)
+                        ResultContent(uiState.record, report, uiState.onlineConfigured, action, onOpenDetails, hasPartsSession, callbacks)
                     }
                 }
             }
@@ -154,6 +172,8 @@ internal fun ResultScreen(
             onConfirm = onConfirmUpload,
             onDismiss = onDismiss,
         )
+        OnlineAction.ConfirmParts -> PartsConsentDialog(onConfirmParts, onDismiss)
+        OnlineAction.ConfirmPartsUpload -> UploadConsentDialog(isDocument = false, onConfirm = onConfirmPartsUpload, onDismiss = onDismiss, parts = true)
         else -> Unit
     }
 }
@@ -165,9 +185,8 @@ private fun ResultContent(
     onlineConfigured: Boolean,
     action: OnlineAction,
     onOpenDetails: () -> Unit,
-    onRequestLookup: () -> Unit,
-    onRequestUpload: () -> Unit,
-    onCancelOnline: () -> Unit,
+    hasPartsSession: Boolean,
+    callbacks: OnlineCallbacks,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -193,7 +212,7 @@ private fun ResultContent(
         item(key = "local_header") { SectionHeader(stringResource(R.string.feature_reports_local_section)) }
         item(key = "local") { LocalCard(report) }
         item(key = "online_header") { SectionHeader(stringResource(R.string.feature_reports_online_section)) }
-        item(key = "online") { OnlineCard(report, onlineConfigured, action, onRequestLookup, onRequestUpload, onCancelOnline) }
+        item(key = "online") { OnlineCard(report, onlineConfigured, action, hasPartsSession, callbacks) }
         item(key = "details") {
             OutlinedButton(onClick = onOpenDetails, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
                 Icon(Icons.Outlined.Build, contentDescription = null)
@@ -320,10 +339,10 @@ private fun OnlineCard(
     report: AnalysisReport,
     configured: Boolean,
     action: OnlineAction,
-    onRequestLookup: () -> Unit,
-    onRequestUpload: () -> Unit,
-    onCancelOnline: () -> Unit,
+    hasPartsSession: Boolean,
+    callbacks: OnlineCallbacks,
 ) {
+    val onCancelOnline = callbacks.cancel
     val uriHandler = LocalUriHandler.current
     AegisCard(Modifier.fillMaxWidth()) {
         when (val online = report.online) {
@@ -361,11 +380,25 @@ private fun OnlineCard(
                 }
             }
         }
+        if (report.parts.isNotEmpty()) PartsList(report)
         Spacer(Modifier.height(12.dp))
         when (action) {
             OnlineAction.LookingUp -> ProgressLine(stringResource(R.string.feature_reports_looking_up), null, onCancelOnline)
             is OnlineAction.Uploading -> ProgressLine(stringResource(R.string.feature_reports_uploading, (action.progress * 100).toInt()), action.progress, onCancelOnline)
             is OnlineAction.WaitingAnalysis -> ProgressLine(stringResource(R.string.feature_reports_waiting, action.status), null, onCancelOnline)
+            is OnlineAction.PartsWorking -> ProgressLine(
+                when (val m = action.message) {
+                    is PartsMessage.Extracting -> stringResource(R.string.feature_reports_parts_extracting, m.part.substringAfterLast('/'))
+                    is PartsMessage.Checking -> stringResource(R.string.feature_reports_parts_checking, m.index, m.total, m.part.substringAfterLast('/'))
+                },
+                null,
+                onCancelOnline,
+            )
+            is OnlineAction.PartsUploading -> ProgressLine(
+                stringResource(R.string.feature_reports_parts_uploading, action.index, action.total, action.part.substringAfterLast('/'), (action.progress * 100).toInt()),
+                action.progress,
+                onCancelOnline,
+            )
             else -> {
                 if (action is OnlineAction.Error) {
                     Text(action.message, style = MaterialTheme.typography.bodySmall, color = AegisTheme.statusColors.error.content)
@@ -374,18 +407,44 @@ private fun OnlineCard(
                 if (!configured) {
                     Text(stringResource(R.string.feature_reports_online_not_configured), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else if (report.hashes != null) {
+                    val size = report.metadata.sizeBytes ?: 0L
+                    val tooLarge = size > MAX_UPLOAD_BYTES
+                    val isApk = report.format == FileFormat.APK
                     AegisPrimaryButton(
                         text = stringResource(R.string.feature_reports_lookup_button),
-                        onClick = onRequestLookup,
+                        onClick = callbacks.lookup,
                         icon = Icons.Outlined.Cloud,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     if (report.online is OnlineReputation.NotFound || report.online is OnlineReputation.Found) {
                         Spacer(Modifier.height(8.dp))
-                        OutlinedButton(onClick = onRequestUpload, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
+                        if (tooLarge) {
+                            Text(stringResource(R.string.feature_reports_too_large_upload), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        } else {
+                            OutlinedButton(onClick = callbacks.upload, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
+                                Icon(Icons.Outlined.CloudUpload, contentDescription = null)
+                                Spacer(Modifier.size(8.dp))
+                                Text(stringResource(R.string.feature_reports_upload_button))
+                            }
+                        }
+                    }
+                    if (isApk && report.online !is OnlineReputation.NotRequested && report.online !is OnlineReputation.Found ||
+                        isApk && tooLarge && report.online !is OnlineReputation.NotRequested
+                    ) {
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedButton(onClick = callbacks.parts, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
+                            Icon(Icons.Outlined.Build, contentDescription = null)
+                            Spacer(Modifier.size(8.dp))
+                            Text(stringResource(R.string.feature_reports_parts_button))
+                        }
+                    }
+                    val unknownParts = report.parts.count { it.online is OnlineReputation.NotFound }
+                    if (hasPartsSession && unknownParts > 0) {
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedButton(onClick = callbacks.partsUpload, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
                             Icon(Icons.Outlined.CloudUpload, contentDescription = null)
                             Spacer(Modifier.size(8.dp))
-                            Text(stringResource(R.string.feature_reports_upload_button))
+                            Text(stringResource(R.string.feature_reports_parts_upload_button, unknownParts))
                         }
                     }
                 }
@@ -427,7 +486,7 @@ private fun LookupConsentDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun UploadConsentDialog(isDocument: Boolean, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+private fun UploadConsentDialog(isDocument: Boolean, onConfirm: () -> Unit, onDismiss: () -> Unit, parts: Boolean = false) {
     var acknowledged by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -435,7 +494,7 @@ private fun UploadConsentDialog(isDocument: Boolean, onConfirm: () -> Unit, onDi
         title = { Text(stringResource(R.string.feature_reports_upload_dialog_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(stringResource(R.string.feature_reports_upload_dialog_message))
+                Text(stringResource(if (parts) R.string.feature_reports_parts_upload_dialog_message else R.string.feature_reports_upload_dialog_message))
                 if (isDocument) {
                     Text(stringResource(R.string.feature_reports_upload_dialog_personal), color = AegisTheme.statusColors.suspicious.content)
                 }
@@ -466,6 +525,48 @@ private fun ReselectDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
         title = { Text(stringResource(R.string.feature_reports_reselect_title)) },
         text = { Text(stringResource(R.string.feature_reports_reselect_message)) },
         confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(R.string.feature_reports_reselect_confirm)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.feature_reports_cancel)) } },
+    )
+}
+
+private const val MAX_UPLOAD_BYTES = 650L * 1024 * 1024
+
+@Composable
+private fun PartsList(report: AnalysisReport) {
+    Spacer(Modifier.height(12.dp))
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+    Spacer(Modifier.height(12.dp))
+    Text(stringResource(R.string.feature_reports_parts_title, report.parts.size), style = MaterialTheme.typography.labelLarge)
+    report.parts.forEach { part ->
+        val (text, tone) = when (val online = part.online) {
+            is OnlineReputation.Found -> when {
+                online.stats.malicious > 0 -> stringResource(R.string.feature_reports_part_detected, online.stats.malicious) to StatusTone.THREAT
+                online.stats.suspicious > 0 -> stringResource(R.string.feature_reports_part_suspicious, online.stats.suspicious) to StatusTone.SUSPICIOUS
+                else -> stringResource(R.string.feature_reports_part_clean, online.stats.notDetected) to StatusTone.SAFE
+            }
+            is OnlineReputation.NotFound -> stringResource(R.string.feature_reports_part_unknown) to StatusTone.INCONCLUSIVE
+            is OnlineReputation.Failed -> stringResource(R.string.feature_reports_part_failed, online.message) to StatusTone.ERROR
+            OnlineReputation.NotRequested -> "—" to StatusTone.INCONCLUSIVE
+        }
+        Row(Modifier.fillMaxWidth().padding(vertical = 4.dp).semantics(mergeDescendants = true) {}, verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(part.name, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+                Text(AegisFormatters.fileSize(part.sizeBytes), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Spacer(Modifier.size(8.dp))
+            Text(text, style = MaterialTheme.typography.labelMedium, color = AegisTheme.statusColors.forTone(tone).content)
+        }
+    }
+}
+
+@Composable
+private fun PartsConsentDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Outlined.Build, contentDescription = null) },
+        title = { Text(stringResource(R.string.feature_reports_parts_dialog_title)) },
+        text = { Text(stringResource(R.string.feature_reports_parts_dialog_message)) },
+        confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(R.string.feature_reports_parts_dialog_confirm)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.feature_reports_cancel)) } },
     )
 }

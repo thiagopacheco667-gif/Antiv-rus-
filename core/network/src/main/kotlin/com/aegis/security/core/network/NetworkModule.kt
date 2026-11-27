@@ -1,6 +1,5 @@
 package com.aegis.security.core.network
 
-import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -43,11 +42,4 @@ object NetworkModule {
         .followSslRedirects(false)
         .addNetworkInterceptor(HttpsOnlyInterceptor())
         .build()
-}
-
-@Module
-@InstallIn(SingletonComponent::class)
-abstract class BackendApiModule {
-    @Binds
-    abstract fun bindsBackendApi(client: AegisBackendClient): BackendApi
 }
