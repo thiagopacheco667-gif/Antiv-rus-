@@ -51,8 +51,16 @@ Guarde o keystore fora do repositório: sem ele não é possível publicar atual
 
 ## Serviço online
 
-Veja [`backend/README.md`](backend/README.md). Depois de subir o servidor com HTTPS, informe no app
-(Configurações → Serviço online) o endereço e o token gerado por `npm run token`.
+Dois modos, em Configurações → Serviço online:
+
+- **Direto (recomendado para uso pessoal):** crie uma conta gratuita em virustotal.com, copie a API key
+  do seu perfil e cole no app. A chave é cifrada com o Android Keystore e nunca é embutida no APK.
+  O app respeita o limite da API pública (4 requisições/min, 500/dia).
+- **Servidor AEGIS:** a chave fica só no servidor ([`backend/README.md`](backend/README.md)).
+
+**APKs grandes (até 2 GB):** o VirusTotal aceita uploads de até 650 MB. Para APKs maiores ou
+desconhecidos, o app extrai apenas o código (classes.dex, bibliotecas .so de uma ABI, código
+embutido), confere o SHA-256 do arquivo e consulta — e, com confirmação, envia — cada parte.
 
 ## Estrutura
 
